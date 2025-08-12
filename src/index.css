@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta inspirada no logo da ferradura dourada */
+    --primary: 45 95% 55%;                /* Dourado/Amarelo #F5C842 */
+    --primary-foreground: 0 0% 100%;      /* Branco */
+    
+    --secondary: 45 100% 92%;             /* Amarelo claro #FFF8E1 */
+    --secondary-foreground: 30 15% 15%;   /* Marrom escuro */
+    
+    --background: 0 0% 100%;              /* Branco puro */
+    --foreground: 30 15% 15%;             /* Marrom escuro #2C1810 */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 30 15% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 15% 15%;
+    
+    --muted: 45 50% 96%;                  /* Bege muito claro #FBF7F0 */
+    --muted-foreground: 30 10% 45%;       /* Marrom médio */
+    
+    --accent: 45 100% 85%;                /* Dourado claro #FFE082 */
+    --accent-foreground: 30 15% 15%;      /* Marrom escuro */
+    
+    --destructive: 0 84% 60%;             /* Vermelho para erros */
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 36%;               /* Verde para vantagens */
+    --success-foreground: 0 0% 100%;
+    
+    --border: 45 30% 85%;                 /* Bege claro #E8DFC8 */
+    --input: 45 30% 85%;
+    --ring: 45 95% 55%;                   /* Dourado para foco */
+    
+    --radius: 8px;
+    
+    /* Gradientes dourados */
+    --gradient-primary: linear-gradient(135deg, hsl(45 95% 55%), hsl(45 85% 45%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(45 50% 96%));
+    --gradient-golden: linear-gradient(135deg, hsl(45 95% 55%), hsl(38 85% 50%));
+    
+    /* Sombras douradas */
+    --shadow-sm: 0 1px 3px hsl(45 95% 55% / 0.1);
+    --shadow-md: 0 4px 12px hsl(45 95% 55% / 0.15);
+    --shadow-lg: 0 8px 25px hsl(45 95% 55% / 0.2);
+    --shadow-golden: 0 4px 20px hsl(45 95% 55% / 0.3);
+    
+    /* Sidebar com tema dourado */
+    --sidebar-background: 45 50% 98%;
+    --sidebar-foreground: 30 15% 15%;
+    --sidebar-primary: 45 95% 55%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 28% 10%;        /* Dark Navy */
+    --foreground: 210 22% 97%;        /* Light Gray */
+    
+    --card: 215 28% 12%;
+    --card-foreground: 210 22% 97%;
+    
+    --popover: 215 28% 12%;
+    --popover-foreground: 210 22% 97%;
+    
+    --primary: 0 0% 100%;             /* White in dark mode */
+    --primary-foreground: 215 28% 17%;
+    
+    --secondary: 215 28% 15%;
+    --secondary-foreground: 210 22% 97%;
+    
+    --muted: 215 28% 15%;
+    --muted-foreground: 215 16% 65%;
+    
+    --accent: 215 28% 15%;
+    --accent-foreground: 210 22% 97%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 22% 97%;
+    
+    --success: 142 76% 36%;               /* Verde para vantagens */
+    --success-foreground: 210 22% 97%;
+    
+    --border: 215 28% 18%;
+    --input: 215 28% 18%;
+    --ring: 0 0% 100%;
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  h1 {
+    @apply text-4xl lg:text-5xl;
+  }
+  
+  h2 {
+    @apply text-3xl lg:text-4xl;
+  }
+  
+  h3 {
+    @apply text-2xl lg:text-3xl;
+  }
+  
+  h4 {
+    @apply text-xl lg:text-2xl;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .btn-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+}
