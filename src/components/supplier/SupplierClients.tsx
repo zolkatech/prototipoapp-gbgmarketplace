@@ -123,14 +123,17 @@ export default function SupplierClients() {
 
       if (error) throw error;
 
-      const formattedClients = data?.map(review => ({
-        id: review.client_id,
-        full_name: review.profiles?.full_name || 'Cliente',
-        avatar_url: review.profiles?.avatar_url || '',
-        rating: review.rating,
-        comment: review.comment || '',
-        created_at: review.created_at
-      })) || [];
+      const formattedClients = data?.map((review: any) => {
+        const prof = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
+        return {
+          id: review.client_id,
+          full_name: prof?.full_name || 'Cliente',
+          avatar_url: prof?.avatar_url || '',
+          rating: review.rating,
+          comment: review.comment || '',
+          created_at: review.created_at
+        };
+      }) || [];
 
       setReviewClients(formattedClients);
     } catch (error) {

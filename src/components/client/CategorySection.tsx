@@ -88,27 +88,30 @@ export default function CategorySection({ categoryValue, categoryLabel, currentU
 
       if (error) throw error;
 
-      const formattedProducts = data?.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description || '',
-        price: product.price,
-        image_url: product.image_url || '',
-        images: product.images || [],
-        category: product.category || '',
-        discount_percentage: product.discount_percentage || 0,
-        original_price: product.original_price || null,
-        delivery_locations: product.delivery_locations || [],
-        delivers: product.delivers ?? true,
-        supplier: {
-          id: product.profiles?.id || '',
-          business_name: product.profiles?.business_name || '',
-          full_name: product.profiles?.full_name || '',
-          city: product.profiles?.city || '',
-          state: product.profiles?.state || '',
-          avatar_url: product.profiles?.avatar_url || ''
-        }
-      })) || [];
+      const formattedProducts = (data as any)?.map((product: any) => {
+        const prof = Array.isArray(product.profiles) ? product.profiles[0] : product.profiles;
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          price: product.price,
+          image_url: product.image_url || '',
+          images: product.images || [],
+          category: product.category || '',
+          discount_percentage: product.discount_percentage || 0,
+          original_price: product.original_price || null,
+          delivery_locations: product.delivery_locations || [],
+          delivers: product.delivers ?? true,
+          supplier: {
+            id: prof?.id || '',
+            business_name: prof?.business_name || '',
+            full_name: prof?.full_name || '',
+            city: prof?.city || '',
+            state: prof?.state || '',
+            avatar_url: prof?.avatar_url || ''
+          }
+        };
+      }) || [];
 
       setProducts(formattedProducts);
     } catch (error) {
