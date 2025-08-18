@@ -12,7 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { formatPhoneDisplay, formatWhatsAppNumber, validateBrazilianWhatsApp, getWhatsAppFullNumber } from '@/lib/whatsapp-utils';
 
 export default function SupplierProfile() {
-  const { profile, user } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -45,6 +45,32 @@ export default function SupplierProfile() {
       });
     }
   }, [profile]);
+
+  // Realtime updates for profile changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refresh profile when it's updated
+          refreshProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, refreshProfile]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -88,6 +114,9 @@ export default function SupplierProfile() {
         title: "Avatar atualizado!",
         description: "Sua foto de perfil foi atualizada com sucesso."
       });
+
+      // Atualizar o perfil imediatamente
+      await refreshProfile();
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
@@ -126,6 +155,9 @@ export default function SupplierProfile() {
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso."
       });
+
+      // Atualizar o perfil imediatamente
+      await refreshProfile();
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
