@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Users, Star, Phone, MapPin, Mail, ChevronDown, Heart, Calendar, Clock, DollarSign } from 'lucide-react';
+import { Users, Star, Phone, MapPin, Mail, ChevronDown, Heart, Calendar, Clock, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,10 @@ import AnimalRegistrationForm from './AnimalRegistrationForm';
 import AppointmentForm from './AppointmentForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Client {
   id: string;
@@ -60,12 +64,21 @@ interface ReviewClient {
 export default function SupplierClients() {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('registered');
   const [clients, setClients] = useState<Client[]>([]);
   const [reviewClients, setReviewClients] = useState<ReviewClient[]>([]);
   const [clientAnimals, setClientAnimals] = useState<{ [clientId: string]: Animal[] }>({});
   const [clientAppointments, setClientAppointments] = useState<{ [clientId: string]: Appointment[] }>({});
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    email: '',
+    notes: ''
+  });
   const [stats, setStats] = useState({
     totalClients: 0,
     totalAnimals: 0,
@@ -224,6 +237,76 @@ export default function SupplierClients() {
     }
     
     setExpandedClients(newExpanded);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+    setEditFormData({
+      name: client.name,
+      phone: client.phone,
+      address: client.address,
+      email: client.email,
+      notes: client.notes
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingClient) return;
+
+    try {
+      const { error } = await supabase
+        .from('supplier_clients')
+        .update({
+          name: editFormData.name,
+          phone: editFormData.phone,
+          address: editFormData.address,
+          email: editFormData.email,
+          notes: editFormData.notes
+        })
+        .eq('id', editingClient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Cliente atualizado!",
+        description: "As informações do cliente foram atualizadas com sucesso."
+      });
+
+      setEditingClient(null);
+      fetchClients();
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar as informações do cliente.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('supplier_clients')
+        .delete()
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Cliente excluído!",
+        description: "O cliente foi excluído com sucesso."
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o cliente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -391,22 +474,66 @@ export default function SupplierClients() {
                           )}
                         </div>
 
-                        {/* Ações */}
-                        <div className="flex flex-wrap gap-2">
-                          <div className="w-full sm:w-auto">
-                            <AnimalRegistrationForm 
-                              clientId={client.id} 
-                              onAnimalAdded={() => fetchClientAnimals(client.id)} 
-                            />
-                          </div>
-                          <div className="w-full sm:w-auto">
-                            <AppointmentForm 
-                              clientId={client.id} 
-                              clientName={client.name}
-                              onAppointmentAdded={() => fetchClientAppointments(client.id)} 
-                            />
-                          </div>
-                        </div>
+                         {/* Ações */}
+                         <div className="flex flex-wrap gap-2">
+                           <div className="w-full sm:w-auto">
+                             <AnimalRegistrationForm 
+                               clientId={client.id} 
+                               onAnimalAdded={() => fetchClientAnimals(client.id)} 
+                             />
+                           </div>
+                           <div className="w-full sm:w-auto">
+                             <AppointmentForm 
+                               clientId={client.id} 
+                               clientName={client.name}
+                               onAppointmentAdded={() => fetchClientAppointments(client.id)} 
+                             />
+                           </div>
+                           <div className="w-full sm:w-auto">
+                             <Button 
+                               variant="outline" 
+                               size="sm" 
+                               onClick={() => handleEditClient(client)}
+                               className="flex items-center gap-2"
+                             >
+                               <Edit className="w-4 h-4" />
+                               Editar
+                             </Button>
+                           </div>
+                           <div className="w-full sm:w-auto">
+                             <AlertDialog>
+                               <AlertDialogTrigger asChild>
+                                 <Button 
+                                   variant="outline" 
+                                   size="sm" 
+                                   className="flex items-center gap-2 text-destructive hover:text-destructive"
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                   Excluir
+                                 </Button>
+                               </AlertDialogTrigger>
+                               <AlertDialogContent>
+                                 <AlertDialogHeader>
+                                   <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
+                                   <AlertDialogDescription>
+                                     Tem certeza que deseja excluir o cliente "{client.name}"? 
+                                     Esta ação não pode ser desfeita e todos os dados relacionados 
+                                     (animais, atendimentos) serão perdidos.
+                                   </AlertDialogDescription>
+                                 </AlertDialogHeader>
+                                 <AlertDialogFooter>
+                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                   <AlertDialogAction 
+                                     onClick={() => handleDeleteClient(client.id)}
+                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                   >
+                                     Excluir
+                                   </AlertDialogAction>
+                                 </AlertDialogFooter>
+                               </AlertDialogContent>
+                             </AlertDialog>
+                           </div>
+                         </div>
 
                         {/* Animais */}
                         {clientAnimals[client.id] && clientAnimals[client.id].length > 0 && (
@@ -569,6 +696,79 @@ export default function SupplierClients() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Edição */}
+      <Dialog open={editingClient !== null} onOpenChange={(open) => !open && setEditingClient(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do cliente abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Nome*</Label>
+              <Input
+                id="edit-name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                placeholder="Nome do cliente"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-phone">Telefone</Label>
+              <Input
+                id="edit-phone"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-address">Endereço</Label>
+              <Input
+                id="edit-address"
+                value={editFormData.address}
+                onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                placeholder="Endereço do cliente"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-notes">Observações</Label>
+              <Textarea
+                id="edit-notes"
+                value={editFormData.notes}
+                onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                placeholder="Observações sobre o cliente"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button onClick={handleSaveEdit} className="flex-1">
+                Salvar Alterações
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setEditingClient(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
