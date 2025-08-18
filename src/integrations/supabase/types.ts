@@ -688,6 +688,10 @@ export type Database = {
         Args: { _supplier_id: string }
         Returns: boolean
       }
+      update_current_user_avatar: {
+        Args: { p_avatar_url: string }
+        Returns: undefined
+      }
       update_current_user_profile: {
         Args: {
           p_address?: string

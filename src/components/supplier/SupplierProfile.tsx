@@ -78,9 +78,9 @@ export default function SupplierProfile() {
         .getPublicUrl(fileName);
 
       const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: data.publicUrl })
-        .eq('user_id', user.id);
+        .rpc('update_current_user_avatar', {
+          p_avatar_url: data.publicUrl
+        });
 
       if (updateError) throw updateError;
 
