@@ -106,9 +106,19 @@ export default function SupplierProfile() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update(formData)
-        .eq('user_id', user.id);
+        .rpc('update_current_user_profile', {
+          p_full_name: formData.full_name,
+          p_business_name: formData.business_name,
+          p_bio: formData.bio,
+          p_city: formData.city,
+          p_state: formData.state,
+          p_address: formData.address,
+          p_phone: formData.phone,
+          p_whatsapp: formData.whatsapp,
+          p_website: formData.website,
+          p_instagram: formData.instagram,
+          p_cep: formData.cep
+        });
 
       if (error) throw error;
 
