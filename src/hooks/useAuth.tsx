@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: any | null;
-  signUp: (email: string, password: string, fullName: string, userType: 'fornecedor' | 'cliente', extra?: { phone?: string; city?: string; state?: string; whatsapp?: string; cpf_cnpj?: string; specialties?: string }) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, userType: 'fornecedor' | 'cliente', extra?: { phone?: string }) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, userType: 'fornecedor' | 'cliente', extra?: { phone?: string; city?: string; state?: string; whatsapp?: string; cpf_cnpj?: string; specialties?: string }) => {
+  const signUp = async (email: string, password: string, fullName: string, userType: 'fornecedor' | 'cliente', extra?: { phone?: string }) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -68,16 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: {
           emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-            user_type: userType,
-            phone: extra?.phone,
-            city: extra?.city,
-            state: extra?.state,
-            whatsapp: extra?.whatsapp,
-            cpf_cnpj: extra?.cpf_cnpj,
-            specialties: extra?.specialties
-          }
+        data: {
+          full_name: fullName,
+          user_type: userType,
+          phone: extra?.phone || '',
+        }
         }
       });
 

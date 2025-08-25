@@ -359,6 +359,7 @@ export type Database = {
           cpf_cnpj: string | null
           created_at: string
           email: string
+          first_login: boolean | null
           full_name: string | null
           id: string
           instagram: string | null
@@ -381,6 +382,7 @@ export type Database = {
           cpf_cnpj?: string | null
           created_at?: string
           email: string
+          first_login?: boolean | null
           full_name?: string | null
           id?: string
           instagram?: string | null
@@ -403,6 +405,7 @@ export type Database = {
           cpf_cnpj?: string | null
           created_at?: string
           email?: string
+          first_login?: boolean | null
           full_name?: string | null
           id?: string
           instagram?: string | null
@@ -662,6 +665,7 @@ export type Database = {
           cpf_cnpj: string | null
           created_at: string
           email: string
+          first_login: boolean | null
           full_name: string | null
           id: string
           instagram: string | null

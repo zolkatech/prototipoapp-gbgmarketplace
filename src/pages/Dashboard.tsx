@@ -1,18 +1,46 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import SupplierDashboard from '@/components/SupplierDashboard';
 import ClientDashboard from '@/components/ClientDashboard';
+import WelcomeDialog from '@/components/WelcomeDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 function DashboardContent() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (profile && profile.first_login) {
+      setShowWelcome(true);
+    }
+  }, [profile]);
+
+  const handleWelcomeClose = async () => {
+    setShowWelcome(false);
+    
+    // Marcar que o usuário já viu a mensagem de boas-vindas
+    if (profile && profile.first_login) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ first_login: false })
+          .eq('user_id', user?.id);
+        
+        // Atualizar o perfil local
+        await refreshProfile();
+      } catch (error) {
+        console.error('Error updating first_login:', error);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -36,6 +64,13 @@ function DashboardContent() {
       ) : (
         <ClientDashboard />
       )}
+      
+      <WelcomeDialog
+        isOpen={showWelcome}
+        onClose={handleWelcomeClose}
+        userType={profile.user_type}
+        userName={profile.full_name}
+      />
     </div>
   );
 }

@@ -101,19 +101,9 @@ function AuthContent() {
     const password = formData.get('password') as string;
     const fullName = formData.get('fullName') as string;
     const phone = (formData.get('phone') as string) || '';
-    const whatsapp = (formData.get('whatsapp') as string) || '';
-    const city = (formData.get('city') as string) || '';
-    const state = (formData.get('state') as string) || '';
-    const cpf_cnpj = (formData.get('cpf_cnpj') as string) || '';
-    const specialties = (formData.get('specialties') as string) || '';
 
     const { error } = await signUp(email, password, fullName, userType, {
       phone,
-      whatsapp,
-      city,
-      state,
-      cpf_cnpj,
-      specialties,
     });
     
     if (error) {
@@ -265,37 +255,9 @@ function AuthContent() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-sm font-medium">Telefone</Label>
-                      <Input id="phone" name="phone" type="tel" placeholder="(11) 9999-9999" className="h-11" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp</Label>
-                      <Input id="whatsapp" name="whatsapp" type="tel" placeholder="11999999999" className="h-11" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-sm font-medium">Cidade</Label>
-                      <Input id="city" name="city" type="text" placeholder="Sua cidade" className="h-11" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state" className="text-sm font-medium">Estado</Label>
-                      <Input id="state" name="state" type="text" placeholder="UF" className="h-11" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cpf_cnpj" className="text-sm font-medium">CPF/CNPJ</Label>
-                      <Input id="cpf_cnpj" name="cpf_cnpj" type="text" placeholder="Digite seu CPF ou CNPJ" className="h-11" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="specialties" className="text-sm font-medium">Especialidades</Label>
-                      <Input id="specialties" name="specialties" type="text" placeholder="Ex: sela, casqueamento" className="h-11" />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-sm font-medium">Telefone</Label>
+                    <Input id="phone" name="phone" type="tel" placeholder="(11) 9999-9999" className="h-11" />
                   </div>
 
                   <div className="space-y-4">
