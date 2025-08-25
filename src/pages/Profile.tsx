@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatPhoneDisplay, formatWhatsAppNumber, validateBrazilianWhatsApp, getWhatsAppFullNumber } from '@/lib/whatsapp-utils';
 
 function ProfileContent() {
-  const { profile, user, loading: authLoading } = useAuth();
+  const { profile, user, loading: authLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -92,6 +92,28 @@ function ProfileContent() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    // Validação do arquivo
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    if (file.size > maxSize) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "A imagem deve ter no máximo 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Tipo de arquivo inválido",
+        description: "Apenas imagens JPG, PNG e WebP são aceitas.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const fileExt = file.name.split('.').pop();
@@ -107,12 +129,15 @@ function ProfileContent() {
         .from('profile-avatars')
         .getPublicUrl(fileName);
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: data.publicUrl })
-        .eq('user_id', user.id);
+      // Usar a função RPC segura ao invés de UPDATE direto
+      const { error: updateError } = await supabase.rpc('update_current_user_avatar', {
+        p_avatar_url: data.publicUrl
+      });
 
       if (updateError) throw updateError;
+
+      // Atualizar o contexto de autenticação
+      await refreshProfile();
 
       toast({
         title: "Avatar atualizado!",
@@ -222,17 +247,18 @@ function ProfileContent() {
               </Avatar>
               
               <label className="cursor-pointer">
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild disabled={loading}>
                   <span>
                     <Camera className="w-4 h-4 mr-2" />
-                    Alterar Foto
+                    {loading ? 'Enviando...' : 'Alterar Foto'}
                   </span>
                 </Button>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={handleAvatarUpload}
                   className="hidden"
+                  disabled={loading}
                 />
               </label>
 
