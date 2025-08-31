@@ -712,6 +712,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_first_login_status: {
+        Args: { p_first_login?: boolean }
+        Returns: undefined
+      }
     }
     Enums: {
       expense_category:
