@@ -13,12 +13,16 @@ import MarketplaceHeader from '@/components/MarketplaceHeader';
 import { Camera, User, MapPin, Phone, MessageCircle, Globe, Instagram, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatPhoneDisplay, formatWhatsAppNumber, validateBrazilianWhatsApp, getWhatsAppFullNumber } from '@/lib/whatsapp-utils';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 function ProfileContent() {
   const { profile, user, loading: authLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     full_name: '',
     business_name: '',
@@ -88,9 +92,9 @@ function ProfileContent() {
     }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     // Validação do arquivo
     const maxSize = 5 * 1024 * 1024; // 5MB
@@ -114,14 +118,24 @@ function ProfileContent() {
       return;
     }
 
-    setLoading(true);
+    setSelectedImageFile(file);
+    setCropDialogOpen(true);
+    
+    // Limpar o input para permitir selecionar o mesmo arquivo novamente
+    event.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    if (!user) return;
+
+    setAvatarUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = 'jpg'; // Sempre salvar como JPG após crop
       const fileName = `${user.id}/avatar.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('profile-avatars')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, croppedFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -146,12 +160,13 @@ function ProfileContent() {
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
-        title: "Erro no upload",
-        description: "Não foi possível atualizar a foto de perfil.",
+        title: "Erro ao enviar foto",
+        description: "Não foi possível atualizar sua foto de perfil. Tente novamente.",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setAvatarUploading(false);
+      setSelectedImageFile(null);
     }
   };
 
@@ -247,18 +262,18 @@ function ProfileContent() {
               </Avatar>
               
               <label className="cursor-pointer">
-                <Button variant="outline" size="sm" asChild disabled={loading}>
+                <Button variant="outline" size="sm" asChild disabled={avatarUploading}>
                   <span>
                     <Camera className="w-4 h-4 mr-2" />
-                    {loading ? 'Enviando...' : 'Alterar Foto'}
+                    {avatarUploading ? 'Enviando...' : 'Alterar Foto'}
                   </span>
                 </Button>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  onChange={handleAvatarUpload}
+                  onChange={handleFileSelect}
                   className="hidden"
-                  disabled={loading}
+                  disabled={avatarUploading}
                 />
               </label>
 
@@ -456,6 +471,13 @@ function ProfileContent() {
             </Card>
           </div>
         </div>
+
+        <ImageCropDialog
+          isOpen={cropDialogOpen}
+          onClose={() => setCropDialogOpen(false)}
+          onCropComplete={handleCropComplete}
+          imageFile={selectedImageFile}
+        />
       </div>
     </div>
   );
