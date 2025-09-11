@@ -342,7 +342,7 @@ export default function SupplierProducts() {
 
             {selectedType === 'product' ? (
               <ProductForm
-                supplierId={profile.id}
+                supplierId={profile.user_id}
                 formData={formData}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
@@ -351,7 +351,7 @@ export default function SupplierProducts() {
               />
             ) : (
               <ServiceForm
-                supplierId={profile.id}
+                supplierId={profile.user_id}
                 formData={formData}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
