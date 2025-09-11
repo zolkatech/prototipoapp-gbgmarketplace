@@ -128,6 +128,18 @@ export default function SupplierProducts() {
     try {
       const isService = isServiceCategory(formData.category);
       
+      // Calcular preço original se não foi informado mas há desconto
+      let calculatedOriginalPrice = formData.original_price ? parseFloat(formData.original_price) : null;
+      
+      if (!formData.original_price && formData.discount_percentage > 0) {
+        // Se não foi informado preço original mas há desconto, calcular automaticamente
+        // Preço atual = Preço original * (1 - desconto/100)
+        // Preço original = Preço atual / (1 - desconto/100)
+        const currentPrice = parseFloat(formData.price);
+        const discountFactor = 1 - (formData.discount_percentage / 100);
+        calculatedOriginalPrice = currentPrice / discountFactor;
+      }
+      
       const productData = {
         name: formData.name,
         description: formData.description,
@@ -136,7 +148,7 @@ export default function SupplierProducts() {
         images: formData.images,
         category: formData.category,
         discount_percentage: formData.discount_percentage,
-        original_price: formData.original_price ? parseFloat(formData.original_price) : null,
+        original_price: calculatedOriginalPrice,
         delivery_locations: isService ? formData.service_locations : formData.delivery_locations,
         delivers: isService ? false : formData.delivers,
         installment_options: formData.installment_options
@@ -400,11 +412,26 @@ export default function SupplierProducts() {
                   <span className="text-xl font-bold text-green-600">
                     R$ {product.price.toFixed(2).replace('.', ',')}
                   </span>
-                  {product.original_price && product.original_price > product.price && (
-                    <span className="text-sm text-gray-500 line-through">
-                      R$ {product.original_price.toFixed(2).replace('.', ',')}
-                    </span>
-                  )}
+                  {(() => {
+                    // Se tem original_price definido, usa ele
+                    if (product.original_price && product.original_price > product.price) {
+                      return (
+                        <span className="text-sm text-gray-500 line-through">
+                          R$ {product.original_price.toFixed(2).replace('.', ',')}
+                        </span>
+                      );
+                    }
+                    // Se não tem original_price mas tem desconto, calcula automaticamente
+                    else if (!product.original_price && product.discount_percentage && product.discount_percentage > 0) {
+                      const calculatedOriginalPrice = product.price / (1 - product.discount_percentage / 100);
+                      return (
+                        <span className="text-sm text-gray-500 line-through">
+                          R$ {calculatedOriginalPrice.toFixed(2).replace('.', ',')}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 
                 {/* Informações de parcelamento */}

@@ -54,8 +54,26 @@ export default function ProductCard({
   });
 
   const hasDiscount = product.discount_percentage && product.discount_percentage > 0;
-  const originalPrice = hasDiscount ? product.original_price : product.price * 1.35;
-  const discount = hasDiscount ? product.discount_percentage : Math.round(((originalPrice - product.price) / originalPrice) * 100);
+  
+  // Calcular o preço original corretamente
+  let originalPrice;
+  let discount;
+  
+  if (product.original_price && product.original_price > product.price) {
+    // Se tem preço original definido, usa ele
+    originalPrice = product.original_price;
+    discount = Math.round(((originalPrice - product.price) / originalPrice) * 100);
+  } else if (hasDiscount) {
+    // Se não tem preço original mas tem desconto, calcula automaticamente
+    // Preço atual = Preço original * (1 - desconto/100)
+    // Preço original = Preço atual / (1 - desconto/100)
+    originalPrice = product.price / (1 - product.discount_percentage! / 100);
+    discount = product.discount_percentage!;
+  } else {
+    // Sem desconto real, usar lógica padrão
+    originalPrice = product.price * 1.35;
+    discount = Math.round(((originalPrice - product.price) / originalPrice) * 100);
+  }
   const interestFreeInstallments = product.installment_options?.interest_free_installments || 3;
   const installmentValue = product.price / interestFreeInstallments;
   const primaryImage = product.images?.[0] || product.image_url;
@@ -142,17 +160,25 @@ export default function ProductCard({
           </h3>
           
             <div className="space-y-0.5 md:space-y-1">
-            <div className="text-xs text-gray-500 line-through font-medium">
-              R$ {originalPrice.toFixed(2)}
-            </div>
+            {/* Mostrar preço original riscado apenas se realmente há desconto */}
+            {(product.original_price && product.original_price > product.price) || 
+             (!product.original_price && hasDiscount) ? (
+              <div className="text-xs text-gray-500 line-through font-medium">
+                R$ {originalPrice.toFixed(2)}
+              </div>
+            ) : null}
             
             <div className="flex items-baseline gap-1 md:gap-2">
               <span className="text-sm md:text-lg font-bold text-success leading-none">
                 R$ {product.price.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}
               </span>
-              <Badge className="bg-success text-success-foreground text-xs px-1 py-0 font-semibold shrink-0">
-                {discount}% OFF
-              </Badge>
+              {/* Mostrar badge de desconto apenas se realmente há desconto */}
+              {((product.original_price && product.original_price > product.price) || 
+                (!product.original_price && hasDiscount)) && (
+                <Badge className="bg-success text-success-foreground text-xs px-1 py-0 font-semibold shrink-0">
+                  {discount}% OFF
+                </Badge>
+              )}
             </div>
             
             {product.installment_options && product.installment_options.interest_free_installments > 0 && (
