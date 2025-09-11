@@ -642,111 +642,146 @@ export default function SupplierProducts() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
         {products.map((product) => (
-          <Card key={product.id} className="overflow-hidden shadow-soft hover:shadow-golden transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                {(product.images && product.images.length > 0) || product.image_url ? (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                    <img 
-                      src={product.images?.[0] || product.image_url} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <Package className="w-6 h-6 text-gray-400" />
-                  </div>
-                )}
+          <Card key={product.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow border">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-6">
+                {/* Imagem do produto */}
+                <div className="relative flex-shrink-0">
+                  {(product.images && product.images.length > 0) || product.image_url ? (
+                    <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
+                      <img 
+                        src={product.images?.[0] || product.image_url} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-lg bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
+                      <Package className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  
+                  {/* Badge de imagens adicionais */}
+                  {product.images && product.images.length > 1 && (
+                    <Badge variant="secondary" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
+                      +{product.images.length - 1}
+                    </Badge>
+                  )}
+                  
+                  {/* Badge de desconto */}
+                  {product.discount_percentage && product.discount_percentage > 0 && (
+                    <Badge className="absolute -top-1 -left-1 bg-red-500 text-white text-xs px-1.5 py-0.5">
+                      -{product.discount_percentage}%
+                    </Badge>
+                  )}
+                </div>
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {getCategoryLabel(product.category)}
-                        </Badge>
-                        <span className="text-lg font-bold text-green-600">
-                          R$ {product.price.toFixed(2).replace('.', ',')}
+                {/* Informações do produto */}
+                <div className="flex-1 min-w-0 space-y-3">
+                  {/* Cabeçalho */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-xl text-gray-900">{product.name}</h3>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="text-xs">
+                        <Tag className="w-3 h-3 mr-1" />
+                        {getCategoryLabel(product.category)}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  {/* Preço */}
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-2xl font-bold text-green-600">
+                      R$ {product.price.toFixed(2).replace('.', ',')}
+                    </span>
+                    {product.original_price && product.original_price > product.price && (
+                      <span className="text-lg text-gray-500 line-through">
+                        R$ {product.original_price.toFixed(2).replace('.', ',')}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Informações de entrega/localização */}
+                  <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                    {isServiceCategory(product.category) ? (
+                      <>
+                        <MapPin className="w-4 h-4 text-blue-500" />
+                        <span className="font-medium text-gray-700">
+                          {product.delivery_locations && product.delivery_locations.length > 0 
+                            ? product.delivery_locations.length === 1 
+                              ? product.delivery_locations[0]
+                              : `${product.delivery_locations[0]} +${product.delivery_locations.length - 1} locais`
+                            : 'Local do serviço a combinar'
+                          }
                         </span>
-                      </div>
-                      
-                      {/* Informações de entrega/localização */}
-                      <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
-                        {isServiceCategory(product.category) ? (
+                      </>
+                    ) : (
+                      <>
+                        {product.delivers ? (
                           <>
-                            <MapPin className="w-4 h-4" />
-                            <span>
+                            <Truck className="w-4 h-4 text-green-500" />
+                            <span className="font-medium text-gray-700">
                               {product.delivery_locations && product.delivery_locations.length > 0 
                                 ? product.delivery_locations.length === 1 
-                                  ? product.delivery_locations[0]
-                                  : `${product.delivery_locations[0]} +${product.delivery_locations.length - 1}`
-                                : 'Local a combinar'
+                                  ? `Entrega: ${product.delivery_locations[0]}`
+                                  : `Entrega: ${product.delivery_locations[0]} +${product.delivery_locations.length - 1} regiões`
+                                : 'Entrega disponível'
                               }
                             </span>
                           </>
                         ) : (
                           <>
-                            {product.delivers ? (
-                              <>
-                                <Truck className="w-4 h-4" />
-                                <span>
-                                  {product.delivery_locations && product.delivery_locations.length > 0 
-                                    ? product.delivery_locations.length === 1 
-                                      ? `Entrega: ${product.delivery_locations[0]}`
-                                      : `Entrega: ${product.delivery_locations[0]} +${product.delivery_locations.length - 1}`
-                                    : 'Entrega disponível'
-                                  }
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <Store className="w-4 h-4" />
-                                <span>Retirar no local</span>
-                              </>
-                            )}
+                            <Store className="w-4 h-4 text-orange-500" />
+                            <span className="font-medium text-gray-700">Retirar no local</span>
                           </>
                         )}
-                      </div>
-
-                      {/* Informações de parcelamento */}
-                      {product.installment_options?.max_installments > 0 && (
-                        <div className="text-sm text-green-600 mt-1">
-                          <CheckCircle className="w-4 h-4 inline mr-1" />
-                          {product.installment_options.max_installments}x sem juros
-                        </div>
-                      )}
-
-                      {/* Descrição do produto */}
-                      {product.description && (
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                          {product.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(product)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteClick(product.id)}
-                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                      </>
+                    )}
                   </div>
+
+                  {/* Informações de parcelamento */}
+                  {product.installment_options?.max_installments > 0 && (
+                    <div className="flex items-center gap-2 text-sm bg-green-50 text-green-700 px-3 py-2 rounded-lg w-fit">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">
+                        Até {product.installment_options.max_installments}x sem juros
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Descrição truncada */}
+                  {product.description && (
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {product.description.length > 120 
+                        ? `${product.description.substring(0, 120)}...` 
+                        : product.description
+                      }
+                    </p>
+                  )}
+                </div>
+
+                {/* Botões de ação */}
+                <div className="flex flex-col gap-3 flex-shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(product)}
+                    className="h-10 px-4 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteClick(product.id)}
+                    className="h-10 px-4 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Excluir
+                  </Button>
                 </div>
               </div>
             </CardContent>
