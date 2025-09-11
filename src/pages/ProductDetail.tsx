@@ -11,7 +11,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import MarketplaceHeader from '@/components/MarketplaceHeader';
 import ImageGallery from '@/components/ImageGallery';
 import ProductCard from '@/components/ProductCard';
-import { getCategoryLabel } from '@/utils/categories';
+import { getCategoryLabel, serviceCategories } from '@/utils/categories';
 import { 
   ArrowLeft, 
   MessageCircle, 
@@ -43,6 +43,10 @@ interface Product {
   original_price?: number;
   delivery_locations?: string[];
   delivers?: boolean;
+  installment_options?: {
+    max_installments: number;
+    interest_free_installments: number;
+  };
   supplier: {
     id: string;
     business_name: string;
@@ -56,6 +60,9 @@ interface Product {
     address?: string;
     website?: string;
     instagram?: string;
+    cep?: string;
+    cpf_cnpj?: string;
+    specialties?: string[];
   };
 }
 
@@ -129,16 +136,17 @@ export default function ProductDetail() {
     try {
       const { data: productData, error: productError } = await supabase
         .from('products')
-        .select('id, name, description, price, original_price, discount_percentage, image_url, images, category, delivers, delivery_locations, supplier_id')
+        .select('id, name, description, price, original_price, discount_percentage, image_url, images, category, delivers, delivery_locations, installment_options, supplier_id')
         .eq('id', productId)
         .single();
 
       if (productError) throw productError;
 
       if (productData) {
-        const { data: supplierPublic } = await supabase
-          .from('profiles_public')
-          .select('id, business_name, avatar_url, bio')
+        // Buscar informações completas do fornecedor
+        const { data: supplierData } = await supabase
+          .from('profiles')
+          .select('id, business_name, full_name, city, state, avatar_url, bio, phone, whatsapp, address, website, instagram, cep, cpf_cnpj, specialties')
           .eq('id', productData.supplier_id)
           .maybeSingle();
 
@@ -154,16 +162,26 @@ export default function ProductDetail() {
           category: productData.category || '',
           delivers: productData.delivers,
           delivery_locations: productData.delivery_locations || [],
+          installment_options: productData.installment_options || {
+            max_installments: 3,
+            interest_free_installments: 3
+          },
           supplier: {
-            id: supplierPublic?.id || productData.supplier_id || '',
-            business_name: supplierPublic?.business_name || '',
-            full_name: '',
-            city: '',
-            state: '',
-            avatar_url: supplierPublic?.avatar_url || '',
-            bio: supplierPublic?.bio || '',
-            website: '',
-            instagram: ''
+            id: supplierData?.id || productData.supplier_id || '',
+            business_name: supplierData?.business_name || '',
+            full_name: supplierData?.full_name || '',
+            city: supplierData?.city || '',
+            state: supplierData?.state || '',
+            avatar_url: supplierData?.avatar_url || '',
+            bio: supplierData?.bio || '',
+            phone: supplierData?.phone || '',
+            whatsapp: supplierData?.whatsapp || '',
+            address: supplierData?.address || '',
+            website: supplierData?.website || '',
+            instagram: supplierData?.instagram || '',
+            cep: supplierData?.cep || '',
+            cpf_cnpj: supplierData?.cpf_cnpj || '',
+            specialties: supplierData?.specialties || []
           }
         };
 
@@ -351,9 +369,14 @@ export default function ProductDetail() {
     );
   }
 
-  const originalPrice = product.price * 1.35;
-  const discount = Math.round(((originalPrice - product.price) / originalPrice) * 100);
-  const installmentValue = product.price / 3;
+  const hasDiscount = product.discount_percentage && product.discount_percentage > 0;
+  const originalPrice = hasDiscount ? product.original_price : product.price * 1.35;
+  const discount = hasDiscount ? product.discount_percentage : Math.round(((originalPrice - product.price) / originalPrice) * 100);
+  const interestFreeInstallments = product.installment_options?.interest_free_installments || 3;
+  const installmentValue = product.price / interestFreeInstallments;
+  
+  // Verificar se é serviço baseado na categoria
+  const isServiceCategory = serviceCategories.some(cat => cat.value === product.category);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -431,35 +454,52 @@ export default function ProductDetail() {
 
             {/* Preço */}
             <div className="space-y-2">
-              <div className="text-sm text-destructive line-through">
-                R$ {originalPrice.toFixed(2).replace('.', ',')}
-              </div>
+              {hasDiscount && (
+                <div className="text-sm text-destructive line-through">
+                  R$ {originalPrice.toFixed(2).replace('.', ',')}
+                </div>
+              )}
               
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-success">
                   R$ {product.price.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}
                 </span>
-                <Badge className="bg-success text-success-foreground text-sm px-2 py-1">
-                  {discount}% OFF
-                </Badge>
+                {hasDiscount && (
+                  <Badge className="bg-success text-success-foreground text-sm px-2 py-1">
+                    {product.discount_percentage}% OFF
+                  </Badge>
+                )}
               </div>
               
-              <div className="text-lg text-success font-medium">
-                3x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
-              </div>
+              {product.installment_options && (
+                <div className="text-lg text-success font-medium">
+                  {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
+                </div>
+              )}
               
               <div className="flex items-center gap-2 text-success font-semibold">
-                {product.delivers ? (
+                {isServiceCategory ? (
                   <>
-                    <span className="text-yellow-500">⚡</span>
+                    <span className="text-blue-500">📍</span>
                     {product.delivery_locations && product.delivery_locations.length > 0 
-                      ? `Entrega: ${product.delivery_locations.join(', ')}` 
-                      : 'Entrega disponível'}
+                      ? product.delivery_locations.join(', ')
+                      : 'Local a combinar'}
                   </>
                 ) : (
                   <>
-                    <span className="text-blue-500">🏪</span>
-                    Retirar no local
+                    {product.delivers ? (
+                      <>
+                        <span className="text-yellow-500">🚚</span>
+                        {product.delivery_locations && product.delivery_locations.length > 0 
+                          ? `Entrega: ${product.delivery_locations.join(', ')}` 
+                          : 'Entrega disponível'}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-blue-500">🏪</span>
+                        Retirar no local
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -491,18 +531,25 @@ export default function ProductDetail() {
                         'Localização não informada'
                       }
                     </div>
-                    {product.supplier.address && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        {product.supplier.address}
+                    {product.supplier.specialties && product.supplier.specialties.length > 0 && (
+                      <div className="text-sm text-gray-600">
+                        <strong>Especialidades:</strong> {product.supplier.specialties.join(', ')}
                       </div>
                     )}
                   </div>
                 </div>
-
+                
                 {product.supplier.bio && (
                   <p className="text-sm text-gray-600">
                     {product.supplier.bio}
                   </p>
+                )}
+                
+                {product.supplier.address && (
+                  <div className="text-sm text-gray-600">
+                    <strong>Endereço:</strong> {product.supplier.address}
+                    {product.supplier.cep && `, CEP: ${product.supplier.cep}`}
+                  </div>
                 )}
 
                 {reviews.length > 0 && (
