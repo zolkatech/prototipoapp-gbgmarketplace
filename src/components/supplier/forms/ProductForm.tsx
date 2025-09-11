@@ -159,6 +159,46 @@ export default function ProductForm({ supplierId, formData, onFormDataChange, on
         />
       </div>
 
+      {/* Imagens (máx. 3) */}
+      <div className="space-y-2">
+        <Label>Imagens do Produto (máx. 3)</Label>
+        <div className="flex items-center gap-3">
+          <Input 
+            type="file" 
+            accept="image/*" 
+            multiple 
+            onChange={(e) => handleFiles(e.target.files)}
+            disabled={(formData.images?.length || 0) >= 3}
+            className="flex-1"
+          />
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {formData.images?.length || 0}/3 imagens
+          </span>
+        </div>
+        
+        {formData.images && formData.images.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            {formData.images.map((url, index) => (
+              <div key={url} className="relative group">
+                <img 
+                  src={url} 
+                  alt={`Imagem do produto ${index + 1}`} 
+                  className="w-full h-24 object-cover rounded-md border-2 border-gray-200 hover:border-primary transition-colors"
+                />
+                <button
+                  type="button"
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-destructive/90"
+                  onClick={() => removeImage(url)}
+                  aria-label="Remover imagem"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="price">Preço (R$)</Label>
