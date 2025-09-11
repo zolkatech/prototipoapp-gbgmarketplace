@@ -9,7 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import ProductDetail from "./pages/ProductDetail";
+import ProductDetailWrapper from "./components/ProductDetailWrapper";
 import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -31,7 +31,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/product/:productId" element={<ProductDetail />} />
+          <Route path="/product/:productId" element={<ProductDetailWrapper />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/supplier/:supplierId" element={<SupplierProfile />} />
           <Route path="*" element={<NotFound />} />

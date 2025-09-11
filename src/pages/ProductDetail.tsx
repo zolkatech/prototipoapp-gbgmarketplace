@@ -28,7 +28,7 @@ import {
   ChevronRight,
   Truck
 } from 'lucide-react';
-import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { generateWhatsAppURL } from '@/lib/whatsapp-utils';
 
 interface Product {
@@ -78,18 +78,18 @@ interface Review {
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
+  const { profile, user } = useAuth(); // Usar o hook de autenticação central
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<{id: string} | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Hook de favoritos
   const { isFavorite, loading: favoriteLoading, toggleFavorite } = useFavorites({
-    userId: currentUser?.id,
+    userId: profile?.id,
     productId: productId
   });
 
@@ -111,26 +111,8 @@ export default function ProductDetail() {
       // Scroll para o topo quando um novo produto é carregado
       window.scrollTo({ top: 0, behavior: 'smooth' });
       fetchProductDetails();
-      getCurrentUser();
     }
   }, [productId]);
-
-  const getCurrentUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profileData } = await supabase
-          .rpc('get_current_user_profile')
-          .maybeSingle();
-        
-        if (profileData) {
-          setCurrentUser({ id: (profileData as any).id });
-        }
-      }
-    } catch (error) {
-      console.error('Error getting current user:', error);
-    }
-  };
 
   const fetchProductDetails = async () => {
     try {
@@ -694,7 +676,7 @@ export default function ProductDetail() {
                   <ProductCard
                     key={relatedProduct.id}
                     product={relatedProduct}
-                    currentUserId={currentUser?.id}
+                    currentUserId={profile?.id}
                     onProductClick={(productId) => navigate(`/product/${productId}`)}
                     categories={categories}
                     compact={true}
