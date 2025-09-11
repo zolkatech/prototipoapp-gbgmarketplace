@@ -26,13 +26,14 @@ function DashboardContent() {
   const handleWelcomeClose = async () => {
     setShowWelcome(false);
     
-    // Marcar que o usuário já viu a mensagem de boas-vindas
+    // Marcar que o usuário já viu a mensagem de boas-vindas usando RPC seguro
     if (profile && profile.first_login) {
       try {
-        await supabase
-          .from('profiles')
-          .update({ first_login: false })
-          .eq('user_id', user?.id);
+        const { error } = await supabase.rpc('update_first_login_status', {
+          p_first_login: false
+        });
+        
+        if (error) throw error;
         
         // Atualizar o perfil local
         await refreshProfile();

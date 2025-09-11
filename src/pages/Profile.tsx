@@ -13,6 +13,7 @@ import MarketplaceHeader from '@/components/MarketplaceHeader';
 import { Camera, User, MapPin, Phone, MessageCircle, Globe, Instagram, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatPhoneDisplay, formatWhatsAppNumber, validateBrazilianWhatsApp, getWhatsAppFullNumber } from '@/lib/whatsapp-utils';
+import { validateCPFOrCNPJ, formatCPFOrCNPJ, sanitizeInput, validateEmail, validatePhoneNumber, formatCEP, validateCEP } from '@/lib/validation-utils';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 function ProfileContent() {
@@ -81,7 +82,21 @@ function ProfileContent() {
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Sanitize input to prevent XSS
+    const sanitizedValue = sanitizeInput(value);
+    
+    // Apply specific formatting based on field
+    if (field === 'cpf_cnpj') {
+      // Format CPF/CNPJ as user types
+      const formatted = formatCPFOrCNPJ(sanitizedValue);
+      setFormData(prev => ({ ...prev, [field]: formatted }));
+    } else if (field === 'cep') {
+      // Format CEP as user types
+      const formatted = formatCEP(sanitizedValue);
+      setFormData(prev => ({ ...prev, [field]: formatted }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    }
   };
 
   const handleWhatsAppBlur = () => {
@@ -196,10 +211,20 @@ function ProfileContent() {
         specialties: specialtiesArray
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('user_id', user.id);
+      // Use the secure RPC function instead of direct table access
+      const { error } = await supabase.rpc('update_current_user_profile', {
+        p_full_name: updateData.full_name,
+        p_business_name: updateData.business_name,
+        p_bio: updateData.bio,
+        p_city: updateData.city,
+        p_state: updateData.state,
+        p_address: updateData.address,
+        p_phone: updateData.phone,
+        p_whatsapp: updateData.whatsapp,
+        p_website: updateData.website,
+        p_instagram: updateData.instagram,
+        p_cep: updateData.cep
+      });
 
       if (error) throw error;
 
@@ -359,6 +384,15 @@ function ProfileContent() {
                         onChange={(e) => handleInputChange('cep', e.target.value)}
                         placeholder="00000-000"
                       />
+                      {formData.cep && (
+                        <div className="text-xs">
+                          {validateCEP(formData.cep) ? (
+                            <span className="text-green-600">✓ CEP válido</span>
+                          ) : (
+                            <span className="text-orange-500">⚠ Digite um CEP válido (8 dígitos)</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -381,6 +415,18 @@ function ProfileContent() {
                         onChange={(e) => handleInputChange('cpf_cnpj', e.target.value)}
                         placeholder="Digite seu CPF ou CNPJ"
                       />
+                      {formData.cpf_cnpj && (
+                        <div className="text-xs">
+                          {(() => {
+                            const validation = validateCPFOrCNPJ(formData.cpf_cnpj);
+                            return validation.isValid ? (
+                              <span className="text-green-600">✓ {validation.type} válido</span>
+                            ) : (
+                              <span className="text-orange-500">⚠ Digite um {formData.cpf_cnpj.replace(/\D/g, '').length <= 11 ? 'CPF' : 'CNPJ'} válido</span>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="specialties_text">Especialidades (separe por vírgula)</Label>
@@ -406,6 +452,15 @@ function ProfileContent() {
                           className="pl-10"
                         />
                       </div>
+                      {formData.phone && (
+                        <div className="text-xs">
+                          {validatePhoneNumber(formData.phone) ? (
+                            <span className="text-green-600">✓ Telefone válido</span>
+                          ) : (
+                            <span className="text-orange-500">⚠ Digite um telefone válido</span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { validatePasswordStrength } from '@/lib/validation-utils';
 
 function SettingsContent() {
   const { profile, user, loading: authLoading } = useAuth();
@@ -77,6 +78,16 @@ function SettingsContent() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate current password is provided
+    if (!passwordForm.currentPassword) {
+      toast({
+        title: "Erro",
+        description: "Digite sua senha atual para continuar.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast({
         title: "Erro",
@@ -86,10 +97,12 @@ function SettingsContent() {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(passwordForm.newPassword);
+    if (!passwordValidation.isValid) {
       toast({
-        title: "Erro",
-        description: "A nova senha deve ter pelo menos 6 caracteres.",
+        title: "Senha muito fraca",
+        description: passwordValidation.feedback.join(', '),
         variant: "destructive"
       });
       return;
@@ -97,6 +110,22 @@ function SettingsContent() {
 
     setLoading(true);
     try {
+      // First verify current password by attempting to sign in
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: passwordForm.currentPassword
+      });
+
+      if (verifyError) {
+        toast({
+          title: "Senha atual incorreta",
+          description: "A senha atual fornecida está incorreta.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update password if current password is correct
       const { error } = await supabase.auth.updateUser({
         password: passwordForm.newPassword
       });
@@ -307,6 +336,37 @@ function SettingsContent() {
                     onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                     placeholder="Digite sua nova senha"
                   />
+                  {passwordForm.newPassword && (
+                    <div className="text-xs space-y-1">
+                      {(() => {
+                        const validation = validatePasswordStrength(passwordForm.newPassword);
+                        const getStrengthColor = (score: number) => {
+                          if (score <= 2) return 'text-red-600';
+                          if (score <= 4) return 'text-orange-500';
+                          return 'text-green-600';
+                        };
+                        const getStrengthText = (score: number) => {
+                          if (score <= 2) return 'Fraca';
+                          if (score <= 4) return 'Média';
+                          return 'Forte';
+                        };
+                        return (
+                          <div>
+                            <span className={getStrengthColor(validation.score)}>
+                              Força da senha: {getStrengthText(validation.score)}
+                            </span>
+                            {validation.feedback.length > 0 && (
+                              <ul className="text-orange-500 text-xs mt-1">
+                                {validation.feedback.map((item, index) => (
+                                  <li key={index}>• {item}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
