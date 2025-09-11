@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Camera, Package, X, MapPin, Truck, Tag, Percent, Store } from 'lucide-react';
+import { Plus, Edit, Trash2, Camera, Package, X, MapPin, Truck, Tag, Percent, Store, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,63 +22,78 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  image_url: string;
-  images: string[];
   category: string;
-  discount_percentage: number;
+  image_url?: string;
+  images?: string[];
+  discount_percentage?: number;
   original_price?: number;
   delivery_locations: string[];
   delivers: boolean;
-  created_at: string;
-  installment_options?: {
+  installment_options: {
     max_installments: number;
     interest_free_installments: number;
   };
+  created_at: string;
+}
+
+interface FormData {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  images: string[];
+  discount_percentage: number;
+  original_price: string;
+  delivers: boolean;
+  delivery_locations: string[];
+  installment_options: {
+    max_installments: number;
+    interest_free_installments: number;
+  };
+  service_locations: string[];
 }
 
 export default function SupplierProducts() {
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(false);
+  const [newLocation, setNewLocation] = useState('');
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
     price: '',
-    original_price: '',
+    category: 'ferramenta',
+    images: [],
     discount_percentage: 0,
-    images: [] as string[],
-    category: '',
+    original_price: '',
     delivers: true,
     delivery_locations: [] as string[],
     installment_options: {
-      max_installments: 3,
-      interest_free_installments: 3
+      max_installments: 0,
+      interest_free_installments: 0
     },
     service_locations: ['Local do serviço a combinar'] as string[]
   });
-  const [isService, setIsService] = useState(false);
-  const [newLocation, setNewLocation] = useState('');
 
   const categories = [
-    { value: 'servico', label: 'Serviços para Cavalos' },
-    { value: 'ferradura', label: 'Ferradura' },
-    { value: 'grosa', label: 'Grosa' },
-    { value: 'acessorio', label: 'Acessório' },
     { value: 'ferramenta', label: 'Ferramenta' },
-    { value: 'cravo', label: 'Cravo' },
+    { value: 'racao-feed', label: 'Ração/Feed' },
+    { value: 'acessorio', label: 'Acessório' },
+    { value: 'medicamento', label: 'Medicamento' },
     { value: 'sela', label: 'Sela' },
     { value: 'freio', label: 'Freio' },
     { value: 'estribo', label: 'Estribo' },
-    { value: 'cuidados', label: 'Cuidados' },
+    { value: 'manta', label: 'Manta' },
     { value: 'outros', label: 'Outros' }
   ];
 
-
-  const defaultLocations = [
+  const deliveryOptions = [
     'Todo o Brasil',
     'Região Sul',
     'Região Sudeste',
@@ -93,6 +108,11 @@ export default function SupplierProducts() {
       fetchProducts();
     }
   }, [profile]);
+
+  // Função para verificar se é categoria de serviço
+  const isServiceCategory = (category: string) => {
+    return serviceCategories.some(cat => cat.value === category);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -118,49 +138,12 @@ export default function SupplierProducts() {
       setProducts(processedProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
-    }
-  };
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user || formData.images.length >= 3) return;
-
-    setLoading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(fileName);
-
-      setFormData(prev => ({ 
-        ...prev, 
-        images: [...prev.images, data.publicUrl]
-      }));
-    } catch (error) {
-      console.error('Error uploading image:', error);
       toast({
-        title: "Erro no upload",
-        description: "Não foi possível fazer o upload da imagem.",
+        title: "Erro ao carregar produtos",
+        description: "Não foi possível carregar os produtos.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
   };
 
   const addLocation = () => {
@@ -203,13 +186,15 @@ export default function SupplierProducts() {
 
     setLoading(true);
     try {
+      const isService = isServiceCategory(formData.category);
+      
       const productData = {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
         image_url: formData.images[0] || null,
         images: formData.images,
-        category: isService ? formData.category : formData.category,
+        category: formData.category,
         discount_percentage: formData.discount_percentage,
         original_price: formData.original_price ? parseFloat(formData.original_price) : null,
         delivery_locations: isService ? formData.service_locations : formData.delivery_locations,
@@ -263,31 +248,29 @@ export default function SupplierProducts() {
   };
 
   const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    const isServiceType = serviceCategories.some(cat => cat.value === product.category);
-    setIsService(isServiceType);
+    const isServiceType = isServiceCategory(product.category);
+    
     setFormData({
       name: product.name,
-      description: product.description || '',
+      description: product.description,
       price: product.price.toString(),
-      original_price: product.original_price?.toString() || '',
-      discount_percentage: product.discount_percentage || 0,
+      category: product.category,
       images: product.images || [],
-      category: product.category || '',
+      discount_percentage: product.discount_percentage || 0,
+      original_price: product.original_price?.toString() || '',
       delivers: product.delivers,
       delivery_locations: product.delivery_locations || [],
       installment_options: product.installment_options || {
-        max_installments: 3,
-        interest_free_installments: 3
+        max_installments: 0,
+        interest_free_installments: 0
       },
       service_locations: isServiceType && product.delivery_locations?.length > 0 
         ? product.delivery_locations 
         : ['Local do serviço a combinar']
     });
+    setEditingProduct(product);
     setIsDialogOpen(true);
   };
-
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const handleDeleteClick = (productId: string) => {
     setProductToDelete(productId);
@@ -327,94 +310,75 @@ export default function SupplierProducts() {
       name: '',
       description: '',
       price: '',
-      original_price: '',
-      discount_percentage: 0,
+      category: 'ferramenta',
       images: [],
-      category: '',
+      discount_percentage: 0,
+      original_price: '',
       delivers: true,
       delivery_locations: [],
       installment_options: {
-        max_installments: 3,
-        interest_free_installments: 3
+        max_installments: 0,
+        interest_free_installments: 0
       },
       service_locations: ['Local do serviço a combinar']
     });
     setEditingProduct(null);
-    setNewLocation('');
-    setIsService(false);
   };
+
+  const isService = isServiceCategory(formData.category);
 
   return (
     <div className="space-y-6">
-      <div className={isMobile ? "flex flex-col items-center space-y-4 text-center" : "flex justify-between items-center"}>
-        {/* Layout mobile: vertical e centralizado */}
-        {isMobile ? (
-          <div className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Minha Vitrine</h2>
-          </div>
-        ) : (
-          /* Layout desktop: Título Minha Loja à esquerda */
-          <div className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Minha Vitrine</h2>
-          </div>
-        )}
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Meus Produtos</h2>
+          <p className="text-muted-foreground">Gerencie seus produtos e serviços</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="shadow-golden">
+            <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />
-              Adicionar Produto/Serviço
+              Adicionar Produto
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingProduct ? 'Editar Produto/Serviço' : 'Adicionar Novo Produto/Serviço'}
+                {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
               </DialogTitle>
               <DialogDescription>
-                Preencha as informações do produto abaixo
+                {editingProduct ? 'Edite as informações do produto' : 'Preencha as informações do produto ou serviço'}
               </DialogDescription>
             </DialogHeader>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Tipo: Produto ou Serviço */}
-              <div className="flex items-center justify-between">
-                <Label>Tipo</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{isService ? 'Serviço' : 'Produto'}</span>
-                  <Switch
-                    checked={isService}
-                    onCheckedChange={(checked) => {
-                      setIsService(!!checked);
-                      setFormData(prev => ({ ...prev, category: '' }));
-                    }}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome do Produto/Serviço</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Ex: Sela de montaria"
+                    required
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name">{isService ? 'Nome do Serviço' : 'Nome do Produto'}</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder={isService ? 'Nome do serviço' : 'Nome do produto'}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Categoria</Label>
-                {isService ? (
-                  <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Categoria</Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria de serviço" />
+                      <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
                       {serviceCategories.map((category) => (
                         <SelectItem key={category.value} value={category.value}>
                           {category.label}
@@ -422,37 +386,24 @@ export default function SupplierProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.filter(c => c.value !== 'servico').map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder={isService ? 'Descrição do serviço' : 'Descrição do produto'}
+                  placeholder="Descreva seu produto ou serviço..."
                   rows={3}
+                  required
                 />
               </div>
 
-              {/* Preço e Desconto */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Preço Atual (R$)</Label>
+                  <Label htmlFor="price">Preço (R$)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -460,237 +411,162 @@ export default function SupplierProducts() {
                     min="0"
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="0.00"
+                    placeholder="0,00"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="discount">Desconto (%)</Label>
+                  <Label htmlFor="original_price">Preço Original (opcional)</Label>
                   <Input
-                    id="discount"
+                    id="original_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.original_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discount_percentage">Desconto (%)</Label>
+                  <Input
+                    id="discount_percentage"
                     type="number"
                     min="0"
-                    max="99"
+                    max="100"
                     value={formData.discount_percentage}
-                    onChange={(e) => {
-                      const discount = parseInt(e.target.value) || 0;
-                      const currentPrice = parseFloat(formData.price) || 0;
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        discount_percentage: discount,
-                        original_price: discount > 0 ? (currentPrice / (1 - discount / 100)).toFixed(2) : ''
-                      }));
-                    }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
                     placeholder="0"
                   />
                 </div>
               </div>
 
-               {formData.discount_percentage > 0 && (
-                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                   <div className="flex items-center gap-2 text-green-700">
-                     <Tag className="w-4 h-4" />
-                     <span className="text-sm font-medium">
-                       Preço original: R$ {formData.original_price} 
-                       {formData.discount_percentage > 0 && ` (${formData.discount_percentage}% OFF)`}
-                     </span>
-                   </div>
-                 </div>
-               )}
-
-               {/* Opções de Parcelamento */}
-               <div className="space-y-4">
-                 <Label>Opções de Parcelamento</Label>
-                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                     <Label htmlFor="max_installments" className="text-sm">Máximo de Parcelas</Label>
-                     <Select 
-                       value={formData.installment_options.max_installments.toString()} 
-                       onValueChange={(value) => {
-                         const maxInstallments = parseInt(value);
-                         setFormData(prev => ({
-                           ...prev,
-                           installment_options: {
-                             ...prev.installment_options,
-                             max_installments: maxInstallments,
-                             interest_free_installments: Math.min(maxInstallments, prev.installment_options.interest_free_installments)
-                           }
-                         }));
-                       }}
-                     >
-                       <SelectTrigger>
-                         <SelectValue />
-                       </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Não parcelo</SelectItem>
-                          {[1, 2, 3, 4, 5, 6, 10, 12].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num}x
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                     </Select>
-                   </div>
-
-                   <div className="space-y-2">
-                     <Label htmlFor="interest_free_installments" className="text-sm">Parcelas sem Juros</Label>
-                     <Select 
-                       value={formData.installment_options.interest_free_installments.toString()} 
-                       onValueChange={(value) => setFormData(prev => ({
-                         ...prev,
-                         installment_options: {
-                           ...prev.installment_options,
-                           interest_free_installments: parseInt(value)
-                         }
-                       }))}
-                     >
-                       <SelectTrigger>
-                         <SelectValue />
-                       </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Não parcelo</SelectItem>
-                          {Array.from({ length: formData.installment_options.max_installments }, (_, i) => i + 1).map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num}x
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                     </Select>
-                   </div>
-                 </div>
-                 
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="text-blue-700 text-sm">
-                      <strong>Exemplo:</strong> {
-                        formData.installment_options.interest_free_installments === 0 
-                          ? 'À vista apenas'
-                          : `${formData.installment_options.interest_free_installments}x de R$ ${
-                              formData.price ? (parseFloat(formData.price) / formData.installment_options.interest_free_installments).toFixed(2).replace('.', ',') : '0,00'
-                            } sem juros`
-                      }
-                    </div>
+              {/* Opções de parcelamento */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Opções de Parcelamento</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="max_installments">Máximo de parcelas</Label>
+                    <Select 
+                      value={formData.installment_options.max_installments.toString()} 
+                      onValueChange={(value) => setFormData(prev => ({ 
+                        ...prev, 
+                        installment_options: { 
+                          ...prev.installment_options, 
+                          max_installments: parseInt(value) 
+                        } 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o máximo de parcelas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Não parcelo</SelectItem>
+                        <SelectItem value="2">2x</SelectItem>
+                        <SelectItem value="3">3x</SelectItem>
+                        <SelectItem value="4">4x</SelectItem>
+                        <SelectItem value="5">5x</SelectItem>
+                        <SelectItem value="6">6x</SelectItem>
+                        <SelectItem value="12">12x</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-               </div>
-              
-              {/* Upload de Imagens */}
-              <div className="space-y-2">
-                <Label>Fotos do Produto (até 3)</Label>
-                <div className="space-y-4">
-                  {formData.images.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2">
-                      {formData.images.map((image, index) => (
-                        <div key={index} className="relative">
-                          <img 
-                            src={image} 
-                            alt={`Preview ${index + 1}`} 
-                            className="w-full h-20 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute -top-2 -right-2 h-6 w-6 p-0"
-                            onClick={() => removeImage(index)}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {formData.images.length < 3 && (
-                    <label className="block">
-                      <Button type="button" variant="outline" className="w-full" asChild>
-                        <span>
-                          <Camera className="w-4 h-4 mr-2" />
-                          Adicionar Foto ({formData.images.length}/3)
-                        </span>
-                      </Button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="interest_free_installments">Parcelas sem juros</Label>
+                    <Select 
+                      value={formData.installment_options.interest_free_installments.toString()} 
+                      onValueChange={(value) => setFormData(prev => ({ 
+                        ...prev, 
+                        installment_options: { 
+                          ...prev.installment_options, 
+                          interest_free_installments: parseInt(value) 
+                        } 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione parcelas sem juros" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Não parcelo</SelectItem>
+                        <SelectItem value="2">2x</SelectItem>
+                        <SelectItem value="3">3x</SelectItem>
+                        <SelectItem value="4">4x</SelectItem>
+                        <SelectItem value="5">5x</SelectItem>
+                        <SelectItem value="6">6x</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
+                {formData.installment_options.max_installments > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Exemplo: {formData.installment_options.interest_free_installments > 0 
+                      ? `${formData.installment_options.interest_free_installments}x R$ ${(parseFloat(formData.price) / formData.installment_options.interest_free_installments || 1).toFixed(2)} sem juros`
+                      : "À vista apenas"
+                    }
+                  </p>
+                )}
               </div>
 
-              {/* Entrega (apenas para produtos) */}
+              {/* Configurações de entrega */}
               {!isService && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Opções de Entrega</Label>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={formData.delivers}
-                        onCheckedChange={(checked) => setFormData(prev => ({ 
-                          ...prev, 
-                          delivers: checked,
-                          delivery_locations: checked ? prev.delivery_locations : []
-                        }))}
-                      />
-                      <Label className="text-sm">
-                        {formData.delivers ? 'Faço entregas' : 'Não faço entregas'}
-                      </Label>
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="delivers"
+                      checked={formData.delivers}
+                      onCheckedChange={(checked) => setFormData(prev => ({ 
+                        ...prev, 
+                        delivers: checked,
+                        delivery_locations: checked ? prev.delivery_locations : []
+                      }))}
+                    />
+                    <Label htmlFor="delivers">Faz entrega</Label>
                   </div>
 
                   {formData.delivers && (
                     <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Digite um local de entrega"
-                          value={newLocation}
-                          onChange={(e) => setNewLocation(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
-                        />
-                        <Button type="button" onClick={addLocation} variant="outline">
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Locais sugeridos:</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {defaultLocations.map((location) => (
-                            <Button
-                              key={location}
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="text-xs"
-                              onClick={() => {
-                                if (!formData.delivery_locations.includes(location)) {
+                      <Label>Locais de entrega</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {deliveryOptions.map((location) => (
+                          <div key={location} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={location}
+                              checked={formData.delivery_locations.includes(location)}
+                              onCheckedChange={(checked) => {
+                                if (checked && !formData.delivery_locations.includes(location)) {
                                   setFormData(prev => ({
                                     ...prev,
                                     delivery_locations: [...prev.delivery_locations, location]
                                   }));
+                                } else if (!checked) {
+                                  removeLocation(location);
                                 }
                               }}
-                            >
+                            />
+                            <Label htmlFor={location} className="text-sm">
                               {location}
-                            </Button>
-                          ))}
-                        </div>
+                            </Label>
+                          </div>
+                        ))}
                       </div>
 
                       {formData.delivery_locations.length > 0 && (
                         <div className="space-y-2">
-                          <Label className="text-sm">Locais selecionados:</Label>
+                          <Label>Locais selecionados:</Label>
                           <div className="flex flex-wrap gap-2">
                             {formData.delivery_locations.map((location) => (
                               <Badge key={location} variant="secondary" className="gap-1">
-                                <MapPin className="w-3 h-3" />
                                 {location}
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="h-4 w-4 p-0 ml-1"
+                                  className="h-auto p-0 w-4 h-4"
                                   onClick={() => removeLocation(location)}
                                 >
                                   <X className="w-3 h-3" />
@@ -703,146 +579,57 @@ export default function SupplierProducts() {
                     </div>
                   )}
                 </div>
-               )}
+              )}
 
-              {/* Locais de Atendimento (apenas para serviços) */}
+              {/* Configurações de localização para serviços */}
               {isService && (
                 <div className="space-y-4">
-                  <Label>Locais de Atendimento</Label>
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Digite um local de atendimento"
-                        value={newLocation}
-                        onChange={(e) => setNewLocation(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addServiceLocation())}
-                      />
-                      <Button type="button" onClick={addServiceLocation} variant="outline">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  <Label>Locais onde presta o serviço</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {deliveryOptions.map((location) => (
+                      <div key={location} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={location}
+                          checked={formData.service_locations.includes(location)}
+                          onCheckedChange={(checked) => {
+                            if (checked && !formData.service_locations.includes(location)) {
+                              setFormData(prev => ({
+                                ...prev,
+                                service_locations: [...prev.service_locations, location]
+                              }));
+                            } else if (!checked) {
+                              removeServiceLocation(location);
+                            }
+                          }}
+                        />
+                        <Label htmlFor={location} className="text-sm">
+                          {location}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
 
+                  {formData.service_locations.length > 0 && (
                     <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Locais sugeridos:</Label>
+                      <Label>Locais selecionados:</Label>
                       <div className="flex flex-wrap gap-2">
-                        {['Local do serviço a combinar', 'Na propriedade do cliente', 'Em nossa sede', 'Todo o Brasil', 'Região Sul', 'Região Sudeste', 'Minha cidade apenas'].map((location) => (
-                          <Button
-                            key={location}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="text-xs"
-                            onClick={() => {
-                              if (!formData.service_locations.includes(location)) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  service_locations: [...prev.service_locations, location]
-                                }));
-                              }
-                            }}
-                          >
+                        {formData.service_locations.map((location) => (
+                          <Badge key={location} variant="secondary" className="gap-1">
                             {location}
-                          </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto p-0 w-4 h-4"
+                              onClick={() => removeServiceLocation(location)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </Badge>
                         ))}
                       </div>
                     </div>
-
-                    {formData.service_locations.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm">Locais selecionados:</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {formData.service_locations.map((location) => (
-                            <Badge key={location} variant="secondary" className="gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {location}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 w-4 p-0 ml-1"
-                                onClick={() => removeServiceLocation(location)}
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Opções de Parcelamento (apenas para produtos) */}
-              {!isService && (
-                <div className="space-y-4">
-                  <Label>Opções de Parcelamento</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="max_installments">Máximo de Parcelas</Label>
-                      <Select 
-                        value={formData.installment_options.max_installments.toString()} 
-                        onValueChange={(value) => setFormData(prev => ({ 
-                          ...prev, 
-                          installment_options: {
-                            ...prev.installment_options,
-                            max_installments: parseInt(value)
-                          }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Não parcelo</SelectItem>
-                          {[1, 2, 3, 4, 5, 6, 10, 12].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num}x
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="interest_free_installments">Parcelas sem Juros</Label>
-                      <Select 
-                        value={formData.installment_options.interest_free_installments.toString()} 
-                        onValueChange={(value) => setFormData(prev => ({ 
-                          ...prev, 
-                          installment_options: {
-                            ...prev.installment_options,
-                            interest_free_installments: parseInt(value)
-                          }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Não parcelo</SelectItem>
-                          {Array.from({ length: formData.installment_options.max_installments }, (_, i) => i + 1).map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num}x sem juros
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="text-blue-700 text-sm">
-                      <strong>Exemplo:</strong> {
-                        formData.installment_options.interest_free_installments === 0 
-                          ? 'À vista apenas'
-                          : `${formData.installment_options.interest_free_installments}x de R$ ${(parseFloat(formData.price) / formData.installment_options.interest_free_installments || 0).toFixed(2)} sem juros`
-                      }
-                      {formData.installment_options.max_installments > formData.installment_options.interest_free_installments && formData.installment_options.interest_free_installments > 0 && 
-                        ` ou até ${formData.installment_options.max_installments}x com juros`
-                      }
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
               
@@ -855,83 +642,110 @@ export default function SupplierProducts() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {products.map((product) => (
           <Card key={product.id} className="overflow-hidden shadow-soft hover:shadow-golden transition-shadow">
-            {(product.images?.length > 0 || product.image_url) && (
-              <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  src={product.images?.[0] || product.image_url} 
-                  alt={product.name}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform"
-                />
-                {product.discount_percentage > 0 && (
-                  <Badge className="absolute top-2 left-2 bg-success text-success-foreground">
-                    {product.discount_percentage}% OFF
-                  </Badge>
-                )}
-                {product.images?.length > 1 && (
-                  <Badge variant="secondary" className="absolute top-2 right-2">
-                    +{product.images.length - 1}
-                  </Badge>
-                )}
-              </div>
-            )}
-            <CardContent className="p-2 md:p-3">
-              <div className="space-y-1 md:space-y-1.5">
-                <div className="flex items-start justify-between gap-1">
-                  <h3 className="font-medium text-xs md:text-sm line-clamp-2 leading-tight">{product.name}</h3>
-                  <Badge variant="outline" className="text-xs shrink-0">
-                    {getCategoryLabel(product.category)}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-0.5 md:space-y-1">
-                  {product.original_price && product.discount_percentage > 0 && (
-                    <div className="text-xs text-muted-foreground line-through">
-                      R$ {product.original_price.toFixed(2)}
-                    </div>
-                  )}
-                  <Badge variant="secondary" className="text-xs md:text-sm font-bold">
-                    R$ {product.price.toFixed(2)}
-                  </Badge>
-                </div>
-
-                {/* Informações de entrega (não aplicável para serviços) */}
-                {product.category !== 'servico' && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Truck className="w-3 h-3" />
-                    <span className="truncate">
-                      {product.delivers ? 
-                        (product.delivery_locations && product.delivery_locations.length > 0 
-                          ? product.delivery_locations.length === 1 
-                            ? `Entrega: ${product.delivery_locations[0]}`
-                            : `Entrega: ${product.delivery_locations.slice(0, 2).join(', ')}${product.delivery_locations.length > 2 ? ` +${product.delivery_locations.length - 2}` : ''}`
-                          : 'Retirar no local'
-                        ) : 'Retirar no local'
-                      }
-                    </span>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                {(product.images && product.images.length > 0) || product.image_url ? (
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <img 
+                      src={product.images?.[0] || product.image_url} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <Package className="w-6 h-6 text-gray-400" />
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between pt-1 md:pt-2">
-                  <div className="flex gap-1 md:gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(product)}
-                      className="h-7 w-7 p-0 md:h-8 md:w-8"
-                    >
-                      <Edit className="w-3 h-3 md:w-4 md:h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteClick(product.id)}
-                      className="text-destructive hover:text-destructive h-7 w-7 p-0 md:h-8 md:w-8"
-                    >
-                      <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                    </Button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {getCategoryLabel(product.category)}
+                        </Badge>
+                        <span className="text-lg font-bold text-green-600">
+                          R$ {product.price.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                      
+                      {/* Informações de entrega/localização */}
+                      <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
+                        {isServiceCategory(product.category) ? (
+                          <>
+                            <MapPin className="w-4 h-4" />
+                            <span>
+                              {product.delivery_locations && product.delivery_locations.length > 0 
+                                ? product.delivery_locations.length === 1 
+                                  ? product.delivery_locations[0]
+                                  : `${product.delivery_locations[0]} +${product.delivery_locations.length - 1}`
+                                : 'Local a combinar'
+                              }
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {product.delivers ? (
+                              <>
+                                <Truck className="w-4 h-4" />
+                                <span>
+                                  {product.delivery_locations && product.delivery_locations.length > 0 
+                                    ? product.delivery_locations.length === 1 
+                                      ? `Entrega: ${product.delivery_locations[0]}`
+                                      : `Entrega: ${product.delivery_locations[0]} +${product.delivery_locations.length - 1}`
+                                    : 'Entrega disponível'
+                                  }
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Store className="w-4 h-4" />
+                                <span>Retirar no local</span>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Informações de parcelamento */}
+                      {product.installment_options?.max_installments > 0 && (
+                        <div className="text-sm text-green-600 mt-1">
+                          <CheckCircle className="w-4 h-4 inline mr-1" />
+                          {product.installment_options.max_installments}x sem juros
+                        </div>
+                      )}
+
+                      {/* Descrição do produto */}
+                      {product.description && (
+                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                          {product.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(product)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(product.id)}
+                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
