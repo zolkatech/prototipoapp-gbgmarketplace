@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Camera, Package, X, MapPin, Truck, Tag, Percent, Store, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, MapPin, Truck, Tag, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { serviceCategories, getCategoryLabel } from '@/utils/categories';
+import { serviceCategories, productCategories, getCategoryLabel } from '@/utils/categories';
+import ProductForm from './forms/ProductForm';
+import ServiceForm from './forms/ServiceForm';
 
 interface Product {
   id: string;
@@ -61,8 +57,8 @@ export default function SupplierProducts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
-  const [newLocation, setNewLocation] = useState('');
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<'product' | 'service'>('product');
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -80,28 +76,6 @@ export default function SupplierProducts() {
     },
     service_locations: ['Local do serviço a combinar'] as string[]
   });
-
-  const categories = [
-    { value: 'ferramenta', label: 'Ferramenta' },
-    { value: 'racao-feed', label: 'Ração/Feed' },
-    { value: 'acessorio', label: 'Acessório' },
-    { value: 'medicamento', label: 'Medicamento' },
-    { value: 'sela', label: 'Sela' },
-    { value: 'freio', label: 'Freio' },
-    { value: 'estribo', label: 'Estribo' },
-    { value: 'manta', label: 'Manta' },
-    { value: 'outros', label: 'Outros' }
-  ];
-
-  const deliveryOptions = [
-    'Todo o Brasil',
-    'Região Sul',
-    'Região Sudeste',
-    'Região Centro-Oeste',
-    'Região Nordeste',
-    'Região Norte',
-    'Minha cidade apenas'
-  ];
 
   useEffect(() => {
     if (profile) {
@@ -144,40 +118,6 @@ export default function SupplierProducts() {
         variant: "destructive"
       });
     }
-  };
-
-  const addLocation = () => {
-    if (newLocation.trim() && !formData.delivery_locations.includes(newLocation.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        delivery_locations: [...prev.delivery_locations, newLocation.trim()]
-      }));
-      setNewLocation('');
-    }
-  };
-
-  const removeLocation = (location: string) => {
-    setFormData(prev => ({
-      ...prev,
-      delivery_locations: prev.delivery_locations.filter(loc => loc !== location)
-    }));
-  };
-
-  const addServiceLocation = () => {
-    if (newLocation.trim() && !formData.service_locations.includes(newLocation.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        service_locations: [...prev.service_locations, newLocation.trim()]
-      }));
-      setNewLocation('');
-    }
-  };
-
-  const removeServiceLocation = (location: string) => {
-    setFormData(prev => ({
-      ...prev,
-      service_locations: prev.service_locations.filter(loc => loc !== location)
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -249,6 +189,7 @@ export default function SupplierProducts() {
 
   const handleEdit = (product: Product) => {
     const isServiceType = isServiceCategory(product.category);
+    setSelectedType(isServiceType ? 'service' : 'product');
     
     setFormData({
       name: product.name,
@@ -310,7 +251,7 @@ export default function SupplierProducts() {
       name: '',
       description: '',
       price: '',
-      category: 'ferramenta',
+      category: selectedType === 'product' ? 'ferramenta' : 'ferrageamento',
       images: [],
       discount_percentage: 0,
       original_price: '',
@@ -325,8 +266,6 @@ export default function SupplierProducts() {
     setEditingProduct(null);
   };
 
-  const isService = isServiceCategory(formData.category);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -338,451 +277,209 @@ export default function SupplierProducts() {
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />
-              Adicionar Produto
+              Adicionar {selectedType === 'product' ? 'Produto' : 'Serviço'}
             </Button>
           </DialogTrigger>
           <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
+                {editingProduct 
+                  ? `Editar ${isServiceCategory(editingProduct.category) ? 'Serviço' : 'Produto'}` 
+                  : `Adicionar Novo ${selectedType === 'product' ? 'Produto' : 'Serviço'}`
+                }
               </DialogTitle>
               <DialogDescription>
-                {editingProduct ? 'Edite as informações do produto' : 'Preencha as informações do produto ou serviço'}
+                {editingProduct 
+                  ? `Edite as informações do ${isServiceCategory(editingProduct.category) ? 'serviço' : 'produto'}` 
+                  : 'Selecione o tipo e preencha as informações'
+                }
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Produto/Serviço</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Ex: Sela de montaria"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoria</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                      {serviceCategories.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Descreva seu produto ou serviço..."
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="0,00"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="original_price">Preço Original (opcional)</Label>
-                  <Input
-                    id="original_price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.original_price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value }))}
-                    placeholder="0,00"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="discount_percentage">Desconto (%)</Label>
-                  <Input
-                    id="discount_percentage"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.discount_percentage}
-                    onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              {/* Opções de parcelamento */}
+            {!editingProduct && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Opções de Parcelamento</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="max_installments">Máximo de parcelas</Label>
-                    <Select 
-                      value={formData.installment_options.max_installments.toString()} 
-                      onValueChange={(value) => setFormData(prev => ({ 
-                        ...prev, 
-                        installment_options: { 
-                          ...prev.installment_options, 
-                          max_installments: parseInt(value) 
-                        } 
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o máximo de parcelas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">Não parcelo</SelectItem>
-                        <SelectItem value="2">2x</SelectItem>
-                        <SelectItem value="3">3x</SelectItem>
-                        <SelectItem value="4">4x</SelectItem>
-                        <SelectItem value="5">5x</SelectItem>
-                        <SelectItem value="6">6x</SelectItem>
-                        <SelectItem value="12">12x</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="interest_free_installments">Parcelas sem juros</Label>
-                    <Select 
-                      value={formData.installment_options.interest_free_installments.toString()} 
-                      onValueChange={(value) => setFormData(prev => ({ 
-                        ...prev, 
-                        installment_options: { 
-                          ...prev.installment_options, 
-                          interest_free_installments: parseInt(value) 
-                        } 
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione parcelas sem juros" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">Não parcelo</SelectItem>
-                        <SelectItem value="2">2x</SelectItem>
-                        <SelectItem value="3">3x</SelectItem>
-                        <SelectItem value="4">4x</SelectItem>
-                        <SelectItem value="5">5x</SelectItem>
-                        <SelectItem value="6">6x</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <h3 className="text-lg font-medium">Tipo de Cadastro</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    type="button"
+                    variant={selectedType === 'product' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setSelectedType('product');
+                      resetForm();
+                    }}
+                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                  >
+                    <Package className="h-6 w-6" />
+                    <span>Produto</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={selectedType === 'service' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setSelectedType('service');
+                      resetForm();
+                    }}
+                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                  >
+                    <Store className="h-6 w-6" />
+                    <span>Serviço</span>
+                  </Button>
                 </div>
-
-                {formData.installment_options.max_installments > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Exemplo: {formData.installment_options.interest_free_installments > 0 
-                      ? `${formData.installment_options.interest_free_installments}x R$ ${(parseFloat(formData.price) / formData.installment_options.interest_free_installments || 1).toFixed(2)} sem juros`
-                      : "À vista apenas"
-                    }
-                  </p>
-                )}
               </div>
+            )}
 
-              {/* Configurações de entrega */}
-              {!isService && (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="delivers"
-                      checked={formData.delivers}
-                      onCheckedChange={(checked) => setFormData(prev => ({ 
-                        ...prev, 
-                        delivers: checked,
-                        delivery_locations: checked ? prev.delivery_locations : []
-                      }))}
-                    />
-                    <Label htmlFor="delivers">Faz entrega</Label>
-                  </div>
-
-                  {formData.delivers && (
-                    <div className="space-y-3">
-                      <Label>Locais de entrega</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {deliveryOptions.map((location) => (
-                          <div key={location} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={location}
-                              checked={formData.delivery_locations.includes(location)}
-                              onCheckedChange={(checked) => {
-                                if (checked && !formData.delivery_locations.includes(location)) {
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    delivery_locations: [...prev.delivery_locations, location]
-                                  }));
-                                } else if (!checked) {
-                                  removeLocation(location);
-                                }
-                              }}
-                            />
-                            <Label htmlFor={location} className="text-sm">
-                              {location}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-
-                      {formData.delivery_locations.length > 0 && (
-                        <div className="space-y-2">
-                          <Label>Locais selecionados:</Label>
-                          <div className="flex flex-wrap gap-2">
-                            {formData.delivery_locations.map((location) => (
-                              <Badge key={location} variant="secondary" className="gap-1">
-                                {location}
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-auto p-0 w-4 h-4"
-                                  onClick={() => removeLocation(location)}
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Configurações de localização para serviços */}
-              {isService && (
-                <div className="space-y-4">
-                  <Label>Locais onde presta o serviço</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {deliveryOptions.map((location) => (
-                      <div key={location} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={location}
-                          checked={formData.service_locations.includes(location)}
-                          onCheckedChange={(checked) => {
-                            if (checked && !formData.service_locations.includes(location)) {
-                              setFormData(prev => ({
-                                ...prev,
-                                service_locations: [...prev.service_locations, location]
-                              }));
-                            } else if (!checked) {
-                              removeServiceLocation(location);
-                            }
-                          }}
-                        />
-                        <Label htmlFor={location} className="text-sm">
-                          {location}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-
-                  {formData.service_locations.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Locais selecionados:</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.service_locations.map((location) => (
-                          <Badge key={location} variant="secondary" className="gap-1">
-                            {location}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-0 w-4 h-4"
-                              onClick={() => removeServiceLocation(location)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Salvando...' : editingProduct ? 'Atualizar' : 'Adicionar'}
-              </Button>
-            </form>
+            {selectedType === 'product' ? (
+              <ProductForm
+                formData={formData}
+                onFormDataChange={setFormData}
+                onSubmit={handleSubmit}
+                loading={loading}
+                editingProduct={editingProduct}
+              />
+            ) : (
+              <ServiceForm
+                formData={formData}
+                onFormDataChange={setFormData}
+                onSubmit={handleSubmit}
+                loading={loading}
+                editingProduct={editingProduct}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
+      {/* Products Grid - Cards verticais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((product) => (
-          <Card key={product.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow border">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                {/* Imagem do produto */}
-                <div className="relative flex-shrink-0">
-                  {(product.images && product.images.length > 0) || product.image_url ? (
-                    <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
-                      <img 
-                        src={product.images?.[0] || product.image_url} 
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-24 h-24 rounded-lg bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
-                      <Package className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
-                  
-                  {/* Badge de imagens adicionais */}
-                  {product.images && product.images.length > 1 && (
-                    <Badge variant="secondary" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
-                      +{product.images.length - 1}
-                    </Badge>
-                  )}
-                  
-                  {/* Badge de desconto */}
-                  {product.discount_percentage && product.discount_percentage > 0 && (
-                    <Badge className="absolute -top-1 -left-1 bg-red-500 text-white text-xs px-1.5 py-0.5">
-                      -{product.discount_percentage}%
-                    </Badge>
+          <Card key={product.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow border h-fit">
+            <div className="relative">
+              {/* Imagem do produto */}
+              {(product.images && product.images.length > 0) || product.image_url ? (
+                <div className="w-full h-48 bg-gray-100 border-b">
+                  <img 
+                    src={product.images?.[0] || product.image_url} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-b flex items-center justify-center">
+                  <Package className="w-12 h-12 text-gray-400" />
+                </div>
+              )}
+              
+              {/* Badge de imagens adicionais */}
+              {product.images && product.images.length > 1 && (
+                <Badge variant="secondary" className="absolute top-2 right-2 text-xs px-2 py-1">
+                  +{product.images.length - 1}
+                </Badge>
+              )}
+              
+              {/* Badge de desconto */}
+              {product.discount_percentage && product.discount_percentage > 0 && (
+                <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1">
+                  -{product.discount_percentage}%
+                </Badge>
+              )}
+            </div>
+
+            <CardContent className="p-4 space-y-3">
+              {/* Cabeçalho */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg text-gray-900 line-clamp-2">{product.name}</h3>
+                <Badge variant="outline" className="text-xs w-fit">
+                  <Tag className="w-3 h-3 mr-1" />
+                  {getCategoryLabel(product.category)}
+                </Badge>
+              </div>
+              
+              {/* Preço */}
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-bold text-green-600">
+                    R$ {product.price.toFixed(2).replace('.', ',')}
+                  </span>
+                  {product.original_price && product.original_price > product.price && (
+                    <span className="text-sm text-gray-500 line-through">
+                      R$ {product.original_price.toFixed(2).replace('.', ',')}
+                    </span>
                   )}
                 </div>
                 
-                {/* Informações do produto */}
-                <div className="flex-1 min-w-0 space-y-3">
-                  {/* Cabeçalho */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-xl text-gray-900">{product.name}</h3>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-xs">
-                        <Tag className="w-3 h-3 mr-1" />
-                        {getCategoryLabel(product.category)}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  {/* Preço */}
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold text-green-600">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
+                {/* Informações de parcelamento */}
+                {product.installment_options?.max_installments > 0 && (
+                  <p className="text-xs text-green-600 font-medium">
+                    Até {product.installment_options.max_installments}x sem juros
+                  </p>
+                )}
+              </div>
+              
+              {/* Informações de entrega/localização */}
+              <div className="flex items-center gap-2 text-xs bg-gray-50 px-2 py-1.5 rounded">
+                {isServiceCategory(product.category) ? (
+                  <>
+                    <MapPin className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                    <span className="text-gray-700 truncate">
+                      {product.delivery_locations && product.delivery_locations.length > 0 
+                        ? product.delivery_locations.length === 1 
+                          ? product.delivery_locations[0]
+                          : `${product.delivery_locations[0]} +${product.delivery_locations.length - 1}`
+                        : 'Local a combinar'
+                      }
                     </span>
-                    {product.original_price && product.original_price > product.price && (
-                      <span className="text-lg text-gray-500 line-through">
-                        R$ {product.original_price.toFixed(2).replace('.', ',')}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Informações de entrega/localização */}
-                  <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
-                    {isServiceCategory(product.category) ? (
+                  </>
+                ) : (
+                  <>
+                    {product.delivers ? (
                       <>
-                        <MapPin className="w-4 h-4 text-blue-500" />
-                        <span className="font-medium text-gray-700">
+                        <Truck className="w-3 h-3 text-green-500 flex-shrink-0" />
+                        <span className="text-gray-700 truncate">
                           {product.delivery_locations && product.delivery_locations.length > 0 
                             ? product.delivery_locations.length === 1 
                               ? product.delivery_locations[0]
-                              : `${product.delivery_locations[0]} +${product.delivery_locations.length - 1} locais`
-                            : 'Local do serviço a combinar'
+                              : `${product.delivery_locations[0]} +${product.delivery_locations.length - 1}`
+                            : 'Entrega disponível'
                           }
                         </span>
                       </>
                     ) : (
                       <>
-                        {product.delivers ? (
-                          <>
-                            <Truck className="w-4 h-4 text-green-500" />
-                            <span className="font-medium text-gray-700">
-                              {product.delivery_locations && product.delivery_locations.length > 0 
-                                ? product.delivery_locations.length === 1 
-                                  ? `Entrega: ${product.delivery_locations[0]}`
-                                  : `Entrega: ${product.delivery_locations[0]} +${product.delivery_locations.length - 1} regiões`
-                                : 'Entrega disponível'
-                              }
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Store className="w-4 h-4 text-orange-500" />
-                            <span className="font-medium text-gray-700">Retirar no local</span>
-                          </>
-                        )}
+                        <Store className="w-3 h-3 text-orange-500 flex-shrink-0" />
+                        <span className="text-gray-700">Retirar no local</span>
                       </>
                     )}
-                  </div>
+                  </>
+                )}
+              </div>
 
-                  {/* Informações de parcelamento */}
-                  {product.installment_options?.max_installments > 0 && (
-                    <div className="flex items-center gap-2 text-sm bg-green-50 text-green-700 px-3 py-2 rounded-lg w-fit">
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="font-medium">
-                        Até {product.installment_options.max_installments}x sem juros
-                      </span>
-                    </div>
-                  )}
+              {/* Descrição truncada */}
+              {product.description && (
+                <p className="text-xs text-gray-600 line-clamp-2">
+                  {product.description}
+                </p>
+              )}
 
-                  {/* Descrição truncada */}
-                  {product.description && (
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {product.description.length > 120 
-                        ? `${product.description.substring(0, 120)}...` 
-                        : product.description
-                      }
-                    </p>
-                  )}
-                </div>
-
-                {/* Botões de ação */}
-                <div className="flex flex-col gap-3 flex-shrink-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(product)}
-                    className="h-10 px-4 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteClick(product.id)}
-                    className="h-10 px-4 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Excluir
-                  </Button>
-                </div>
+              {/* Botões de ação */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(product)}
+                  className="flex-1 h-8 text-xs hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                >
+                  <Edit className="w-3 h-3 mr-1" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDeleteClick(product.id)}
+                  className="flex-1 h-8 text-xs text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Excluir
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -810,7 +507,7 @@ export default function SupplierProducts() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleConfirmDelete}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
