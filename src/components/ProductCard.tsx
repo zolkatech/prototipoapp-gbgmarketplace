@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
-import { getCategoryLabel } from '@/utils/categories';
+import { getCategoryLabel, serviceCategories } from '@/utils/categories';
 
 interface Product {
   id: string;
@@ -59,20 +59,27 @@ export default function ProductCard({
   const interestFreeInstallments = product.installment_options?.interest_free_installments || 3;
   const installmentValue = product.price / interestFreeInstallments;
   const primaryImage = product.images?.[0] || product.image_url;
+  
+  // Verificar se é serviço baseado na categoria
+  const isServiceCategory = serviceCategories.some(cat => cat.value === product.category);
 
-  const formatDeliveryText = (locations: string[] | undefined) => {
-    if (!locations || locations.length === 0) return 'Retirar no local';
+  const formatDeliveryText = (locations: string[] | undefined, isService: boolean = false) => {
+    if (!locations || locations.length === 0) {
+      return isService ? 'Local a combinar' : 'Retirar no local';
+    }
     
     if (locations.length === 1) {
-      return `Entrega: ${locations[0]}`;
+      return isService ? locations[0] : `Entrega: ${locations[0]}`;
     }
     
     // Se tem múltiplos locais, mostrar os principais ou resumir
     if (locations.length <= 3) {
-      return `Entrega: ${locations.join(', ')}`;
+      return isService ? locations.join(', ') : `Entrega: ${locations.join(', ')}`;
     }
     
-    return `Entrega: ${locations.slice(0, 2).join(', ')} +${locations.length - 2}`;
+    return isService 
+      ? `${locations.slice(0, 2).join(', ')} +${locations.length - 2}`
+      : `Entrega: ${locations.slice(0, 2).join(', ')} +${locations.length - 2}`;
   };
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -134,7 +141,7 @@ export default function ProductCard({
             {product.name}
           </h3>
           
-          <div className="space-y-0.5 md:space-y-1">
+            <div className="space-y-0.5 md:space-y-1">
             <div className="text-xs text-gray-500 line-through font-medium">
               R$ {originalPrice.toFixed(2)}
             </div>
@@ -148,16 +155,21 @@ export default function ProductCard({
               </Badge>
             </div>
             
-            <div className="text-xs text-success font-medium">
-              {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
-            </div>
+            {product.installment_options && (
+              <div className="text-xs text-success font-medium">
+                {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
+              </div>
+            )}
             
             <div className="flex items-center gap-1 text-xs text-blue-700 font-medium">
-              <span className="text-blue-500">🚚</span>
+              <span className="text-blue-500">{isServiceCategory ? '📍' : '🚚'}</span>
               <span className="truncate">
-                {product.delivers ? 
-                  formatDeliveryText(product.delivery_locations)
-                  : 'Retirar no local'
+                {isServiceCategory ? 
+                  formatDeliveryText(product.delivery_locations, true)
+                  : (product.delivers ? 
+                      formatDeliveryText(product.delivery_locations)
+                      : 'Retirar no local'
+                    )
                 }
               </span>
             </div>

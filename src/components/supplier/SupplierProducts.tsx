@@ -56,7 +56,8 @@ export default function SupplierProducts() {
     installment_options: {
       max_installments: 3,
       interest_free_installments: 3
-    }
+    },
+    service_locations: ['Local do serviço a combinar'] as string[]
   });
   const [isService, setIsService] = useState(false);
   const [newLocation, setNewLocation] = useState('');
@@ -178,6 +179,23 @@ export default function SupplierProducts() {
     }));
   };
 
+  const addServiceLocation = () => {
+    if (newLocation.trim() && !formData.service_locations.includes(newLocation.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        service_locations: [...prev.service_locations, newLocation.trim()]
+      }));
+      setNewLocation('');
+    }
+  };
+
+  const removeServiceLocation = (location: string) => {
+    setFormData(prev => ({
+      ...prev,
+      service_locations: prev.service_locations.filter(loc => loc !== location)
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -190,12 +208,12 @@ export default function SupplierProducts() {
         price: parseFloat(formData.price),
         image_url: formData.images[0] || null,
         images: formData.images,
-        category: isService ? 'outros' : formData.category,
+        category: isService ? formData.category : formData.category,
         discount_percentage: formData.discount_percentage,
         original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-        delivery_locations: isService ? [] : formData.delivery_locations,
+        delivery_locations: isService ? formData.service_locations : formData.delivery_locations,
         delivers: isService ? false : formData.delivers,
-        installment_options: isService ? null : formData.installment_options
+        installment_options: formData.installment_options
       };
 
       if (editingProduct) {
@@ -245,7 +263,8 @@ export default function SupplierProducts() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
-    setIsService(product.category === 'servico');
+    const isServiceType = serviceCategories.some(cat => cat.value === product.category);
+    setIsService(isServiceType);
     setFormData({
       name: product.name,
       description: product.description || '',
@@ -259,7 +278,10 @@ export default function SupplierProducts() {
       installment_options: product.installment_options || {
         max_installments: 3,
         interest_free_installments: 3
-      }
+      },
+      service_locations: isServiceType && product.delivery_locations?.length > 0 
+        ? product.delivery_locations 
+        : ['Local do serviço a combinar']
     });
     setIsDialogOpen(true);
   };
@@ -305,7 +327,8 @@ export default function SupplierProducts() {
       installment_options: {
         max_installments: 3,
         interest_free_installments: 3
-      }
+      },
+      service_locations: ['Local do serviço a combinar']
     });
     setEditingProduct(null);
     setNewLocation('');
@@ -455,17 +478,85 @@ export default function SupplierProducts() {
                 </div>
               </div>
 
-              {formData.discount_percentage > 0 && (
-                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <Tag className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      Preço original: R$ {formData.original_price} 
-                      {formData.discount_percentage > 0 && ` (${formData.discount_percentage}% OFF)`}
-                    </span>
-                  </div>
-                </div>
-              )}
+               {formData.discount_percentage > 0 && (
+                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                   <div className="flex items-center gap-2 text-green-700">
+                     <Tag className="w-4 h-4" />
+                     <span className="text-sm font-medium">
+                       Preço original: R$ {formData.original_price} 
+                       {formData.discount_percentage > 0 && ` (${formData.discount_percentage}% OFF)`}
+                     </span>
+                   </div>
+                 </div>
+               )}
+
+               {/* Opções de Parcelamento */}
+               <div className="space-y-4">
+                 <Label>Opções de Parcelamento</Label>
+                 <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="max_installments" className="text-sm">Máximo de Parcelas</Label>
+                     <Select 
+                       value={formData.installment_options.max_installments.toString()} 
+                       onValueChange={(value) => {
+                         const maxInstallments = parseInt(value);
+                         setFormData(prev => ({
+                           ...prev,
+                           installment_options: {
+                             ...prev.installment_options,
+                             max_installments: maxInstallments,
+                             interest_free_installments: Math.min(maxInstallments, prev.installment_options.interest_free_installments)
+                           }
+                         }));
+                       }}
+                     >
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {[1, 2, 3, 4, 5, 6, 10, 12].map((num) => (
+                           <SelectItem key={num} value={num.toString()}>
+                             {num}x
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="interest_free_installments" className="text-sm">Parcelas sem Juros</Label>
+                     <Select 
+                       value={formData.installment_options.interest_free_installments.toString()} 
+                       onValueChange={(value) => setFormData(prev => ({
+                         ...prev,
+                         installment_options: {
+                           ...prev.installment_options,
+                           interest_free_installments: parseInt(value)
+                         }
+                       }))}
+                     >
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {Array.from({ length: formData.installment_options.max_installments }, (_, i) => i + 1).map((num) => (
+                           <SelectItem key={num} value={num.toString()}>
+                             {num}x
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                 </div>
+                 
+                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                   <div className="text-blue-700 text-sm">
+                     <strong>Exemplo:</strong> {formData.installment_options.interest_free_installments}x de R$ {
+                       formData.price ? (parseFloat(formData.price) / formData.installment_options.interest_free_installments).toFixed(2).replace('.', ',') : '0,00'
+                     } sem juros
+                   </div>
+                 </div>
+               </div>
               
               {/* Upload de Imagens */}
               <div className="space-y-2">
@@ -596,6 +687,74 @@ export default function SupplierProducts() {
                       )}
                     </div>
                   )}
+                </div>
+               )}
+
+              {/* Locais de Atendimento (apenas para serviços) */}
+              {isService && (
+                <div className="space-y-4">
+                  <Label>Locais de Atendimento</Label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Digite um local de atendimento"
+                        value={newLocation}
+                        onChange={(e) => setNewLocation(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addServiceLocation())}
+                      />
+                      <Button type="button" onClick={addServiceLocation} variant="outline">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Locais sugeridos:</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {['Local do serviço a combinar', 'Na propriedade do cliente', 'Em nossa sede', 'Todo o Brasil', 'Região Sul', 'Região Sudeste', 'Minha cidade apenas'].map((location) => (
+                          <Button
+                            key={location}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => {
+                              if (!formData.service_locations.includes(location)) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  service_locations: [...prev.service_locations, location]
+                                }));
+                              }
+                            }}
+                          >
+                            {location}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {formData.service_locations.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm">Locais selecionados:</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.service_locations.map((location) => (
+                            <Badge key={location} variant="secondary" className="gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {location}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 ml-1"
+                                onClick={() => removeServiceLocation(location)}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
