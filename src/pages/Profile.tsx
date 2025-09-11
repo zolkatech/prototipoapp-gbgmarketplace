@@ -223,7 +223,9 @@ function ProfileContent() {
         p_whatsapp: updateData.whatsapp,
         p_website: updateData.website,
         p_instagram: updateData.instagram,
-        p_cep: updateData.cep
+        p_cep: updateData.cep,
+        p_cpf_cnpj: updateData.cpf_cnpj,
+        p_specialties: specialtiesArray
       });
 
       if (error) throw error;
