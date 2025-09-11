@@ -370,11 +370,11 @@ export default function SupplierProducts() {
               )}
               
               {/* Badge de imagens adicionais */}
-              {product.images && product.images.length > 1 && (
+              {product.images && product.images.length > 1 ? (
                 <Badge variant="secondary" className="absolute top-2 right-2 text-xs px-2 py-1">
                   +{product.images.length - 1}
                 </Badge>
-              )}
+              ) : null}
               
               {/* Badge de desconto */}
               {product.discount_percentage && product.discount_percentage > 0 && (
