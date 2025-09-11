@@ -35,7 +35,7 @@ export default function WelcomeDialog({ isOpen, onClose, userType, userName }: W
           </DialogTitle>
           <DialogDescription className="text-base mt-2">
             {userType === 'fornecedor' 
-              ? 'Sua conta de fornecedor foi criada com sucesso! Para começar a vender seus produtos, recomendamos completar suas informações de perfil.'
+              ? 'Sua conta de fornecedor foi criada com sucesso! Para começar a vender seus serviços e produtos, recomendamos completar suas informações de perfil.'
               : 'Sua conta foi criada com sucesso! Para uma melhor experiência na plataforma, recomendamos completar suas informações de perfil.'
             }
           </DialogDescription>

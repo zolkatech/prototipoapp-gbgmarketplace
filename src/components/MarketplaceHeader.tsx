@@ -63,7 +63,7 @@ export default function MarketplaceHeader({
               <div className="flex-1 max-w-xl">
                 <div className="relative">
                   <Input
-                    placeholder="Buscar produtos, marcas e muito mais..."
+                    placeholder="Buscar serviços e produtos..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange?.(e.target.value)}
                     className="pl-4 pr-12 h-10 bg-white border-0 shadow-sm text-gray-700 placeholder:text-gray-500"
