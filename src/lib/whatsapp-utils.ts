@@ -55,12 +55,13 @@ export const formatWhatsAppNumber = (input: string): string => {
 
 /**
  * Valida se um número de WhatsApp brasileiro está correto
+ * Aceita tanto celulares (11 dígitos) quanto fixos (10 dígitos)
  */
 export const validateBrazilianWhatsApp = (number: string): boolean => {
   const cleaned = cleanPhoneNumber(number);
   
-  // Deve ter exatamente 11 dígitos
-  if (cleaned.length !== 11) {
+  // Deve ter 10 ou 11 dígitos
+  if (cleaned.length !== 10 && cleaned.length !== 11) {
     return false;
   }
   
@@ -70,14 +71,22 @@ export const validateBrazilianWhatsApp = (number: string): boolean => {
     return false;
   }
   
-  // Terceiro dígito deve ser 9 (celular)
-  if (cleaned[2] !== '9') {
-    return false;
+  // Se tem 11 dígitos, terceiro dígito deve ser 9 (celular)
+  if (cleaned.length === 11) {
+    if (cleaned[2] !== '9') {
+      return false;
+    }
+    // Quarto dígito deve ser 6, 7, 8 ou 9
+    if (!['6', '7', '8', '9'].includes(cleaned[3])) {
+      return false;
+    }
   }
   
-  // Quarto dígito deve ser 6, 7, 8 ou 9
-  if (!['6', '7', '8', '9'].includes(cleaned[3])) {
-    return false;
+  // Se tem 10 dígitos, terceiro dígito deve ser 2, 3, 4 ou 5 (fixo)
+  if (cleaned.length === 10) {
+    if (!['2', '3', '4', '5'].includes(cleaned[2])) {
+      return false;
+    }
   }
   
   return true;
@@ -104,7 +113,12 @@ export const formatPhoneDisplay = (number: string): string => {
  */
 export const getWhatsAppFullNumber = (number: string): string => {
   const cleaned = cleanPhoneNumber(number);
-  const formatted = formatWhatsAppNumber(cleaned);
+  let formatted = formatWhatsAppNumber(cleaned);
+  
+  // Se é um número válido de 10 dígitos (fixo), não adicione o 9
+  if (cleaned.length === 10 && validateBrazilianWhatsApp(cleaned)) {
+    formatted = cleaned;
+  }
   
   if (validateBrazilianWhatsApp(formatted)) {
     return `+55${formatted}`;

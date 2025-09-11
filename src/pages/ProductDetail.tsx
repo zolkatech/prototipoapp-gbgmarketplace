@@ -57,6 +57,7 @@ interface Product {
     bio: string;
     phone?: string;
     whatsapp?: string;
+    email?: string;
     address?: string;
     website?: string;
     instagram?: string;
@@ -128,7 +129,7 @@ export default function ProductDetail() {
         // Buscar informações completas do fornecedor
         const { data: supplierData } = await supabase
           .from('profiles')
-          .select('id, business_name, full_name, city, state, avatar_url, bio, phone, whatsapp, address, website, instagram, cep, cpf_cnpj, specialties')
+          .select('id, business_name, full_name, city, state, avatar_url, bio, phone, whatsapp, email, address, website, instagram, cep, cpf_cnpj, specialties')
           .eq('id', productData.supplier_id)
           .maybeSingle();
 
@@ -158,6 +159,7 @@ export default function ProductDetail() {
             bio: supplierData?.bio || '',
             phone: supplierData?.phone || '',
             whatsapp: supplierData?.whatsapp || '',
+            email: supplierData?.email || '',
             address: supplierData?.address || '',
             website: supplierData?.website || '',
             instagram: supplierData?.instagram || '',
@@ -265,11 +267,17 @@ export default function ProductDetail() {
   };
 
   const handleEmailContact = () => {
-    if (product) {
+    if (product && product.supplier.email) {
       const subject = `Interesse no produto: ${product.name}`;
       const body = `Olá ${product.supplier.business_name || product.supplier.full_name},\n\nVi seu produto "${product.name}" no GBG Marketplace e gostaria de mais informações.\n\nAguardo seu contato.`;
-      const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const mailtoUrl = `mailto:${product.supplier.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(mailtoUrl);
+    } else {
+      toast({
+        title: 'E-mail não disponível',
+        description: 'Este fornecedor não cadastrou e-mail para contato.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -565,9 +573,13 @@ export default function ProductDetail() {
                   </Button>
                   
                   <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" onClick={handleEmailContact}>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleEmailContact}
+                      disabled={!product.supplier.email}
+                    >
                       <Mail className="w-4 h-4 mr-2" />
-                      E-mail
+                      {product.supplier.email ? 'E-mail' : 'Sem e-mail'}
                     </Button>
                     <Button 
                       variant="outline" 
