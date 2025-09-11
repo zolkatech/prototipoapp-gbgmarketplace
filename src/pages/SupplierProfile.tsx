@@ -437,9 +437,5 @@ function SupplierProfileContent() {
 }
 
 export default function SupplierProfile() {
-  return (
-    <AuthProvider>
-      <SupplierProfileContent />
-    </AuthProvider>
-  );
+  return <SupplierProfileContent />;
 }

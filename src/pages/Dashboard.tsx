@@ -77,9 +77,5 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-  return (
-    <AuthProvider>
-      <DashboardContent />
-    </AuthProvider>
-  );
+  return <DashboardContent />;
 }

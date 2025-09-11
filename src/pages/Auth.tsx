@@ -336,9 +336,5 @@ function AuthContent() {
 }
 
 export default function Auth() {
-  return (
-    <AuthProvider>
-      <AuthContent />
-    </AuthProvider>
-  );
+  return <AuthContent />;
 }

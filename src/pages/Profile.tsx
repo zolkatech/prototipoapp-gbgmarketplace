@@ -541,9 +541,5 @@ function ProfileContent() {
 }
 
 export default function Profile() {
-  return (
-    <AuthProvider>
-      <ProfileContent />
-    </AuthProvider>
-  );
+  return <ProfileContent />;
 }

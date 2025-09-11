@@ -79,7 +79,7 @@ interface Review {
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
-  const { profile, user } = useAuth(); // Usar o hook de autenticação central
+  const { profile, user, signOut } = useAuth(); // Usar o hook de autenticação central
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -370,7 +370,11 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MarketplaceHeader showCategories={false} />
+      <MarketplaceHeader 
+        showCategories={false}
+        userProfile={profile}
+        onSignOut={signOut}
+      />
       
       <div className="container mx-auto px-4 py-6">
         {/* Breadcrumb */}

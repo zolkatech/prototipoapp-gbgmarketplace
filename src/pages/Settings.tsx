@@ -425,9 +425,5 @@ function SettingsContent() {
 }
 
 export default function Settings() {
-  return (
-    <AuthProvider>
-      <SettingsContent />
-    </AuthProvider>
-  );
+  return <SettingsContent />;
 }

@@ -204,9 +204,5 @@ function FavoritesContent() {
 }
 
 export default function Favorites() {
-  return (
-    <AuthProvider>
-      <FavoritesContent />
-    </AuthProvider>
-  );
+  return <FavoritesContent />;
 }
