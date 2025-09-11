@@ -126,20 +126,20 @@ export default function ProductDetail() {
       if (productError) throw productError;
 
       if (productData) {
-        // Buscar informações completas do fornecedor usando profiles_public
-        const { data: supplierData } = await supabase
-          .from('profiles_public')
-          .select('id, business_name, bio, avatar_url')
-          .eq('id', productData.supplier_id)
-          .maybeSingle();
+        // Buscar informações públicas completas do fornecedor via RPC segura
+        const { data: supplierFull } = await supabase.rpc('get_supplier_public_details', {
+          _id: productData.supplier_id
+        });
 
-        // Se não encontrou no profiles_public, buscar dados básicos do RPC
-        let fullSupplierData = null;
-        if (!supplierData) {
-          const { data: publicProfile } = await supabase.rpc('get_public_profile', {
-            _id: productData.supplier_id
-          });
-          fullSupplierData = publicProfile;
+        // Fallback para profiles_public (nome, bio e avatar) caso RPC não retorne
+        let supplierPublic: any = supplierFull;
+        if (!supplierPublic) {
+          const { data: publicProfile } = await supabase
+            .from('profiles_public')
+            .select('id, business_name, bio, avatar_url')
+            .eq('id', productData.supplier_id)
+            .maybeSingle();
+          supplierPublic = publicProfile;
         }
 
         const formattedProduct = {
@@ -159,22 +159,22 @@ export default function ProductDetail() {
             interest_free_installments: 3
           },
           supplier: {
-            id: (supplierData?.id || fullSupplierData?.id || productData.supplier_id) || '',
-            business_name: (supplierData?.business_name || fullSupplierData?.business_name) || 'Fornecedor',
-            full_name: '',
-            city: '',
-            state: '',
-            avatar_url: (supplierData?.avatar_url || fullSupplierData?.avatar_url) || '',
-            bio: (supplierData?.bio || fullSupplierData?.bio) || '',
-            phone: '',
-            whatsapp: '',
-            email: '',
-            address: '',
-            website: '',
-            instagram: '',
-            cep: '',
+            id: (supplierPublic?.id || productData.supplier_id) || '',
+            business_name: (supplierPublic?.business_name) || 'Fornecedor',
+            full_name: supplierPublic?.full_name || '',
+            city: supplierPublic?.city || '',
+            state: supplierPublic?.state || '',
+            avatar_url: supplierPublic?.avatar_url || '',
+            bio: supplierPublic?.bio || '',
+            phone: supplierPublic?.phone || '',
+            whatsapp: supplierPublic?.whatsapp || '',
+            email: supplierPublic?.email || '',
+            address: supplierPublic?.address || '',
+            website: supplierPublic?.website || '',
+            instagram: supplierPublic?.instagram || '',
+            cep: supplierPublic?.cep || '',
             cpf_cnpj: '',
-            specialties: []
+            specialties: supplierPublic?.specialties || []
           }
         };
 
@@ -368,11 +368,11 @@ export default function ProductDetail() {
     );
   }
 
-  const hasDiscount = product.discount_percentage && product.discount_percentage > 0;
-  const originalPrice = hasDiscount ? product.original_price : product.price * 1.35;
-  const discount = hasDiscount ? product.discount_percentage : Math.round(((originalPrice - product.price) / originalPrice) * 100);
-  const interestFreeInstallments = product.installment_options?.interest_free_installments || 3;
-  const installmentValue = product.price / interestFreeInstallments;
+  const hasDiscount = ((product.discount_percentage ?? 0) > 0);
+  const originalPrice = hasDiscount ? (product.original_price ?? product.price) : product.price * 1.35;
+  const maxInstallments = product.installment_options?.max_installments ?? 0;
+  const interestFreeInstallments = Math.min(product.installment_options?.interest_free_installments ?? 0, maxInstallments);
+  const installmentValue = interestFreeInstallments > 0 ? product.price / interestFreeInstallments : 0;
   
   // Verificar se é serviço baseado na categoria
   const isServiceCategory = serviceCategories.some(cat => cat.value === product.category);
@@ -474,7 +474,7 @@ export default function ProductDetail() {
                 )}
               </div>
               
-              {product.installment_options && product.installment_options.max_installments > 0 && (
+              {interestFreeInstallments > 0 && (
                 <div className="text-lg text-success font-medium">
                   {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
                 </div>

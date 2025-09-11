@@ -636,6 +636,26 @@ export type Database = {
           id: string
         }[]
       }
+      get_supplier_public_details: {
+        Args: { _id: string }
+        Returns: {
+          address: string
+          avatar_url: string
+          bio: string
+          business_name: string
+          cep: string
+          city: string
+          email: string
+          full_name: string
+          id: string
+          instagram: string
+          phone: string
+          specialties: string[]
+          state: string
+          website: string
+          whatsapp: string
+        }[]
+      }
       is_supplier_owned: {
         Args: { _supplier_id: string }
         Returns: boolean
