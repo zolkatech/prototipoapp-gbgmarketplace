@@ -132,7 +132,7 @@ export default function ProductDetail() {
         });
 
         // Fallback para profiles_public (nome, bio e avatar) caso RPC não retorne
-        let supplierPublic: any = supplierFull;
+        let supplierPublic: any = Array.isArray(supplierFull) ? supplierFull[0] : supplierFull;
         if (!supplierPublic) {
           const { data: publicProfile } = await supabase
             .from('profiles_public')
