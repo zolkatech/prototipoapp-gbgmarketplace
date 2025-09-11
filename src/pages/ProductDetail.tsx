@@ -126,12 +126,21 @@ export default function ProductDetail() {
       if (productError) throw productError;
 
       if (productData) {
-        // Buscar informações completas do fornecedor
+        // Buscar informações completas do fornecedor usando profiles_public
         const { data: supplierData } = await supabase
-          .from('profiles')
-          .select('id, business_name, full_name, city, state, avatar_url, bio, phone, whatsapp, email, address, website, instagram, cep, cpf_cnpj, specialties')
+          .from('profiles_public')
+          .select('id, business_name, bio, avatar_url')
           .eq('id', productData.supplier_id)
           .maybeSingle();
+
+        // Se não encontrou no profiles_public, buscar dados básicos do RPC
+        let fullSupplierData = null;
+        if (!supplierData) {
+          const { data: publicProfile } = await supabase.rpc('get_public_profile', {
+            _id: productData.supplier_id
+          });
+          fullSupplierData = publicProfile;
+        }
 
         const formattedProduct = {
           id: productData.id,
@@ -150,22 +159,22 @@ export default function ProductDetail() {
             interest_free_installments: 3
           },
           supplier: {
-            id: supplierData?.id || productData.supplier_id || '',
-            business_name: supplierData?.business_name || '',
-            full_name: supplierData?.full_name || '',
-            city: supplierData?.city || '',
-            state: supplierData?.state || '',
-            avatar_url: supplierData?.avatar_url || '',
-            bio: supplierData?.bio || '',
-            phone: supplierData?.phone || '',
-            whatsapp: supplierData?.whatsapp || '',
-            email: supplierData?.email || '',
-            address: supplierData?.address || '',
-            website: supplierData?.website || '',
-            instagram: supplierData?.instagram || '',
-            cep: supplierData?.cep || '',
-            cpf_cnpj: supplierData?.cpf_cnpj || '',
-            specialties: supplierData?.specialties || []
+            id: (supplierData?.id || fullSupplierData?.id || productData.supplier_id) || '',
+            business_name: (supplierData?.business_name || fullSupplierData?.business_name) || 'Fornecedor',
+            full_name: '',
+            city: '',
+            state: '',
+            avatar_url: (supplierData?.avatar_url || fullSupplierData?.avatar_url) || '',
+            bio: (supplierData?.bio || fullSupplierData?.bio) || '',
+            phone: '',
+            whatsapp: '',
+            email: '',
+            address: '',
+            website: '',
+            instagram: '',
+            cep: '',
+            cpf_cnpj: '',
+            specialties: []
           }
         };
 
@@ -465,7 +474,7 @@ export default function ProductDetail() {
                 )}
               </div>
               
-              {product.installment_options && product.installment_options.interest_free_installments > 0 && (
+              {product.installment_options && product.installment_options.max_installments > 0 && (
                 <div className="text-lg text-success font-medium">
                   {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
                 </div>
