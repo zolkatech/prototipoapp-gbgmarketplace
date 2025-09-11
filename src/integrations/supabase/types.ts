@@ -665,35 +665,21 @@ export type Database = {
         Returns: undefined
       }
       update_current_user_profile: {
-        Args:
-          | {
-              p_address?: string
-              p_bio?: string
-              p_business_name?: string
-              p_cep?: string
-              p_city?: string
-              p_cpf_cnpj?: string
-              p_full_name?: string
-              p_instagram?: string
-              p_phone?: string
-              p_specialties?: string[]
-              p_state?: string
-              p_website?: string
-              p_whatsapp?: string
-            }
-          | {
-              p_address?: string
-              p_bio?: string
-              p_business_name?: string
-              p_cep?: string
-              p_city?: string
-              p_full_name?: string
-              p_instagram?: string
-              p_phone?: string
-              p_state?: string
-              p_website?: string
-              p_whatsapp?: string
-            }
+        Args: {
+          p_address?: string
+          p_bio?: string
+          p_business_name?: string
+          p_cep?: string
+          p_city?: string
+          p_cpf_cnpj?: string
+          p_full_name?: string
+          p_instagram?: string
+          p_phone?: string
+          p_specialties?: string[]
+          p_state?: string
+          p_website?: string
+          p_whatsapp?: string
+        }
         Returns: undefined
       }
       update_first_login_status: {
