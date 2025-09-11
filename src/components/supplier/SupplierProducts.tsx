@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -286,14 +287,20 @@ export default function SupplierProducts() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+
+  const handleDeleteClick = (productId: string) => {
+    setProductToDelete(productId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
 
     try {
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', productToDelete);
 
       if (error) throw error;
 
@@ -310,6 +317,8 @@ export default function SupplierProducts() {
         description: "Não foi possível excluir o produto.",
         variant: "destructive"
       });
+    } finally {
+      setProductToDelete(null);
     }
   };
 
@@ -918,7 +927,7 @@ export default function SupplierProducts() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDeleteClick(product.id)}
                       className="text-destructive hover:text-destructive h-7 w-7 p-0 md:h-8 md:w-8"
                     >
                       <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
@@ -940,6 +949,24 @@ export default function SupplierProducts() {
           </div>
         </Card>
       )}
+
+      {/* Modal de confirmação de exclusão */}
+      <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
