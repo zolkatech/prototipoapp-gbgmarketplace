@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
+import { getCategoryLabel } from '@/utils/categories';
 
 interface Product {
   id: string;
@@ -164,7 +165,7 @@ export default function ProductCard({
           
           <div className="pt-1 md:pt-1.5 border-t border-gray-100">
             <Badge variant="outline" className="text-xs mb-1">
-              {categories.find(cat => cat.value === product.category)?.label || product.category}
+              {getCategoryLabel(product.category)}
             </Badge>
             
             <div className="flex items-center gap-1 text-xs text-muted-foreground">

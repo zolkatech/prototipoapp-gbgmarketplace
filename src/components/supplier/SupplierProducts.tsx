@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { serviceCategories, getCategoryLabel } from '@/utils/categories';
 
 interface Product {
   id: string;
@@ -73,6 +74,7 @@ export default function SupplierProducts() {
     { value: 'cuidados', label: 'Cuidados' },
     { value: 'outros', label: 'Outros' }
   ];
+
 
   const defaultLocations = [
     'Todo o Brasil',
@@ -356,7 +358,7 @@ export default function SupplierProducts() {
                     checked={isService}
                     onCheckedChange={(checked) => {
                       setIsService(!!checked);
-                      setFormData(prev => ({ ...prev, category: checked ? 'servico' : '' }));
+                      setFormData(prev => ({ ...prev, category: '' }));
                     }}
                   />
                 </div>
@@ -376,9 +378,18 @@ export default function SupplierProducts() {
               <div className="space-y-2">
                 <Label htmlFor="category">Categoria</Label>
                 {isService ? (
-                  <div className="p-3 rounded-md border text-sm">
-                    Serviços para Cavalos
-                  </div>
+                  <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria de serviço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceCategories.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
                     <SelectTrigger>
@@ -691,7 +702,7 @@ export default function SupplierProducts() {
                 <div className="flex items-start justify-between gap-1">
                   <h3 className="font-medium text-xs md:text-sm line-clamp-2 leading-tight">{product.name}</h3>
                   <Badge variant="outline" className="text-xs shrink-0">
-                    {categories.find(cat => cat.value === product.category)?.label || product.category}
+                    {getCategoryLabel(product.category)}
                   </Badge>
                 </div>
                 

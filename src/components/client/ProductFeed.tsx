@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import ProductCard from '@/components/ProductCard';
 import { generateEquineMockProducts } from '@/utils/mockData';
+import { getCategoryLabel, getAllCategories } from '@/utils/categories';
 
 interface Product {
   id: string;
@@ -43,19 +44,7 @@ export default function ProductFeed({ searchQuery, selectedCategory = '' }: Prod
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const categories = [
-    { value: 'ferradura', label: 'Ferradura' },
-    { value: 'grosa', label: 'Grosa' },
-    { value: 'acessorio', label: 'Acessório' },
-    { value: 'ferramenta', label: 'Ferramenta' },
-    { value: 'cravo', label: 'Cravo' },
-    { value: 'sela', label: 'Sela' },
-    { value: 'freio', label: 'Freio' },
-    { value: 'estribo', label: 'Estribo' },
-    { value: 'cuidados', label: 'Cuidados' },
-    { value: 'outros', label: 'Outros' },
-    { value: 'servico', label: 'Serviços para Cavalos' }
-  ];
+  const categories = getAllCategories();
 
   useEffect(() => {
     fetchProducts();
@@ -196,7 +185,7 @@ export default function ProductFeed({ searchQuery, selectedCategory = '' }: Prod
           {searchQuery 
             ? `Resultados para "${searchQuery}"` 
             : selectedCategory 
-              ? categories.find(cat => cat.value === selectedCategory)?.label || 'Produtos'
+              ? getCategoryLabel(selectedCategory) || 'Produtos'
               : 'Todos os Produtos'
           }
         </h2>

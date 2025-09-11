@@ -11,6 +11,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import MarketplaceHeader from '@/components/MarketplaceHeader';
 import ImageGallery from '@/components/ImageGallery';
 import ProductCard from '@/components/ProductCard';
+import { getCategoryLabel } from '@/utils/categories';
 import { 
   ArrowLeft, 
   MessageCircle, 
@@ -370,7 +371,7 @@ export default function ProductDetail() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <span className="text-sm text-gray-600">
-            Marketplace / {categories.find(cat => cat.value === product.category)?.label} / {product.name}
+            Marketplace / {getCategoryLabel(product.category)} / {product.name}
           </span>
         </div>
 
@@ -419,7 +420,7 @@ export default function ProductDetail() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="outline">
-                  {categories.find(cat => cat.value === product.category)?.label}
+                  {getCategoryLabel(product.category)}
                 </Badge>
               </div>
               
