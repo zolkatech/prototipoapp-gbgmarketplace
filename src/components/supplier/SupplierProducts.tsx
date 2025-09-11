@@ -513,13 +513,14 @@ export default function SupplierProducts() {
                        <SelectTrigger>
                          <SelectValue />
                        </SelectTrigger>
-                       <SelectContent>
-                         {[1, 2, 3, 4, 5, 6, 10, 12].map((num) => (
-                           <SelectItem key={num} value={num.toString()}>
-                             {num}x
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
+                        <SelectContent>
+                          <SelectItem value="0">Não parcelo</SelectItem>
+                          {[1, 2, 3, 4, 5, 6, 10, 12].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num}x
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                      </Select>
                    </div>
 
@@ -538,24 +539,29 @@ export default function SupplierProducts() {
                        <SelectTrigger>
                          <SelectValue />
                        </SelectTrigger>
-                       <SelectContent>
-                         {Array.from({ length: formData.installment_options.max_installments }, (_, i) => i + 1).map((num) => (
-                           <SelectItem key={num} value={num.toString()}>
-                             {num}x
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
+                        <SelectContent>
+                          <SelectItem value="0">Não parcelo</SelectItem>
+                          {Array.from({ length: formData.installment_options.max_installments }, (_, i) => i + 1).map((num) => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num}x
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                      </Select>
                    </div>
                  </div>
                  
-                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                   <div className="text-blue-700 text-sm">
-                     <strong>Exemplo:</strong> {formData.installment_options.interest_free_installments}x de R$ {
-                       formData.price ? (parseFloat(formData.price) / formData.installment_options.interest_free_installments).toFixed(2).replace('.', ',') : '0,00'
-                     } sem juros
-                   </div>
-                 </div>
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-blue-700 text-sm">
+                      <strong>Exemplo:</strong> {
+                        formData.installment_options.interest_free_installments === 0 
+                          ? 'À vista apenas'
+                          : `${formData.installment_options.interest_free_installments}x de R$ ${
+                              formData.price ? (parseFloat(formData.price) / formData.installment_options.interest_free_installments).toFixed(2).replace('.', ',') : '0,00'
+                            } sem juros`
+                      }
+                    </div>
+                  </div>
                </div>
               
               {/* Upload de Imagens */}
@@ -779,6 +785,7 @@ export default function SupplierProducts() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="0">Não parcelo</SelectItem>
                           {[1, 2, 3, 4, 5, 6, 10, 12].map((num) => (
                             <SelectItem key={num} value={num.toString()}>
                               {num}x
@@ -804,6 +811,7 @@ export default function SupplierProducts() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="0">Não parcelo</SelectItem>
                           {Array.from({ length: formData.installment_options.max_installments }, (_, i) => i + 1).map((num) => (
                             <SelectItem key={num} value={num.toString()}>
                               {num}x sem juros
@@ -816,8 +824,12 @@ export default function SupplierProducts() {
                   
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="text-blue-700 text-sm">
-                      <strong>Exemplo:</strong> {formData.installment_options.interest_free_installments}x de R$ {(parseFloat(formData.price) / formData.installment_options.interest_free_installments || 0).toFixed(2)} sem juros
-                      {formData.installment_options.max_installments > formData.installment_options.interest_free_installments && 
+                      <strong>Exemplo:</strong> {
+                        formData.installment_options.interest_free_installments === 0 
+                          ? 'À vista apenas'
+                          : `${formData.installment_options.interest_free_installments}x de R$ ${(parseFloat(formData.price) / formData.installment_options.interest_free_installments || 0).toFixed(2)} sem juros`
+                      }
+                      {formData.installment_options.max_installments > formData.installment_options.interest_free_installments && formData.installment_options.interest_free_installments > 0 && 
                         ` ou até ${formData.installment_options.max_installments}x com juros`
                       }
                     </div>

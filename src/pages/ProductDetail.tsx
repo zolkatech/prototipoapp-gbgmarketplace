@@ -461,7 +461,7 @@ export default function ProductDetail() {
                 )}
               </div>
               
-              {product.installment_options && (
+              {product.installment_options && product.installment_options.interest_free_installments > 0 && (
                 <div className="text-lg text-success font-medium">
                   {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
                 </div>

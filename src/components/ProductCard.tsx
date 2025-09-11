@@ -155,7 +155,7 @@ export default function ProductCard({
               </Badge>
             </div>
             
-            {product.installment_options && (
+            {product.installment_options && product.installment_options.interest_free_installments > 0 && (
               <div className="text-xs text-success font-medium">
                 {interestFreeInstallments}x R$ {installmentValue.toFixed(2).replace('.', ',')} sem juros
               </div>
