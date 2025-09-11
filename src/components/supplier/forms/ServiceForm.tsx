@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
 import { serviceCategories } from '@/utils/categories';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FormData {
   name: string;
@@ -26,6 +28,7 @@ interface FormData {
 }
 
 interface ServiceFormProps {
+  supplierId: string;
   formData: FormData;
   onFormDataChange: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -33,8 +36,9 @@ interface ServiceFormProps {
   editingProduct: any;
 }
 
-export default function ServiceForm({ formData, onFormDataChange, onSubmit, loading, editingProduct }: ServiceFormProps) {
+export default function ServiceForm({ supplierId, formData, onFormDataChange, onSubmit, loading, editingProduct }: ServiceFormProps) {
   const [newLocation, setNewLocation] = useState('');
+  const { toast } = useToast();
 
   const addServiceLocation = () => {
     if (newLocation.trim() && !formData.service_locations.includes(newLocation.trim())) {
@@ -65,6 +69,37 @@ export default function ServiceForm({ formData, onFormDataChange, onSubmit, load
         [field]: value
       }
     });
+  };
+  const handleFiles = async (fileList: FileList | null) => {
+    if (!fileList) return;
+    const current = formData.images?.length || 0;
+    const remaining = 3 - current;
+    if (remaining <= 0) {
+      toast({ title: 'Limite de imagens', description: 'Máximo de 3 imagens por item.', variant: 'destructive' });
+      return;
+    }
+    const files = Array.from(fileList).slice(0, remaining);
+    const uploadedUrls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) continue;
+      const path = `${supplierId}/${Date.now()}-${i}-${file.name}`;
+      const { error } = await supabase.storage.from('product-images').upload(path, file);
+      if (error) {
+        console.error(error);
+        toast({ title: 'Falha ao enviar imagem', description: error.message, variant: 'destructive' });
+        continue;
+      }
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+      uploadedUrls.push(data.publicUrl);
+    }
+    if (uploadedUrls.length) {
+      onFormDataChange({ ...formData, images: [...(formData.images || []), ...uploadedUrls].slice(0, 3) });
+    }
+  };
+
+  const removeImage = (url: string) => {
+    onFormDataChange({ ...formData, images: (formData.images || []).filter((u) => u !== url) });
   };
 
   return (
@@ -99,6 +134,37 @@ export default function ServiceForm({ formData, onFormDataChange, onSubmit, load
             </SelectContent>
           </Select>
         </div>
+      </div>
+      {/* Imagens (máx. 3) */}
+      <div className="space-y-2">
+        <Label>Imagens (máx. 3)</Label>
+        <div className="flex items-center gap-3">
+          <Input 
+            type="file" 
+            accept="image/*" 
+            multiple 
+            onChange={(e) => handleFiles(e.target.files)}
+            disabled={(formData.images?.length || 0) >= 3}
+          />
+          <span className="text-xs text-muted-foreground">Selecione até 3 imagens</span>
+        </div>
+        {formData.images && formData.images.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {formData.images.map((url) => (
+              <div key={url} className="relative group">
+                <img src={url} alt="Imagem do serviço" className="w-full h-24 object-cover rounded-md border" />
+                <button
+                  type="button"
+                  className="absolute top-1 right-1 bg-background/80 border rounded p-1"
+                  onClick={() => removeImage(url)}
+                  aria-label="Remover imagem"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">

@@ -8,6 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
 import { productCategories } from '@/utils/categories';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FormData {
   name: string;
@@ -27,6 +29,7 @@ interface FormData {
 }
 
 interface ProductFormProps {
+  supplierId: string;
   formData: FormData;
   onFormDataChange: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -44,8 +47,9 @@ const deliveryOptions = [
   'Minha cidade apenas'
 ];
 
-export default function ProductForm({ formData, onFormDataChange, onSubmit, loading, editingProduct }: ProductFormProps) {
+export default function ProductForm({ supplierId, formData, onFormDataChange, onSubmit, loading, editingProduct }: ProductFormProps) {
   const [newLocation, setNewLocation] = useState('');
+  const { toast } = useToast();
 
   const addLocation = () => {
     if (newLocation.trim() && !formData.delivery_locations.includes(newLocation.trim())) {
@@ -78,6 +82,37 @@ export default function ProductForm({ formData, onFormDataChange, onSubmit, load
     });
   };
 
+  const handleFiles = async (fileList: FileList | null) => {
+    if (!fileList) return;
+    const current = formData.images?.length || 0;
+    const remaining = 3 - current;
+    if (remaining <= 0) {
+      toast({ title: 'Limite de imagens', description: 'Máximo de 3 imagens por item.', variant: 'destructive' });
+      return;
+    }
+    const files = Array.from(fileList).slice(0, remaining);
+    const uploadedUrls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) continue;
+      const path = `${supplierId}/${Date.now()}-${i}-${file.name}`;
+      const { error } = await supabase.storage.from('product-images').upload(path, file);
+      if (error) {
+        console.error(error);
+        toast({ title: 'Falha ao enviar imagem', description: error.message, variant: 'destructive' });
+        continue;
+      }
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+      uploadedUrls.push(data.publicUrl);
+    }
+    if (uploadedUrls.length) {
+      onFormDataChange({ ...formData, images: [...(formData.images || []), ...uploadedUrls].slice(0, 3) });
+    }
+  };
+
+  const removeImage = (url: string) => {
+    onFormDataChange({ ...formData, images: (formData.images || []).filter((u) => u !== url) });
+  };
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

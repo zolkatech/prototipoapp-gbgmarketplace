@@ -342,6 +342,7 @@ export default function SupplierProducts() {
 
             {selectedType === 'product' ? (
               <ProductForm
+                supplierId={profile.id}
                 formData={formData}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
@@ -350,6 +351,7 @@ export default function SupplierProducts() {
               />
             ) : (
               <ServiceForm
+                supplierId={profile.id}
                 formData={formData}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
@@ -381,19 +383,12 @@ export default function SupplierProducts() {
                 </div>
               )}
               
-              {/* Badge de imagens adicionais */}
-              {product.images && product.images.length > 1 ? (
-                <Badge variant="secondary" className="absolute top-2 right-2 text-xs px-2 py-1">
-                  +{product.images.length - 1}
-                </Badge>
-              ) : null}
-              
               {/* Badge de desconto */}
-              {product.discount_percentage && product.discount_percentage > 0 && (
-                <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1">
+              {product.discount_percentage && product.discount_percentage > 0 ? (
+                <Badge className="absolute top-2 left-2 bg-success text-success-foreground text-xs px-2 py-1">
                   -{product.discount_percentage}%
                 </Badge>
-              )}
+              ) : null}
             </div>
 
             <CardContent className="p-4 space-y-3">
