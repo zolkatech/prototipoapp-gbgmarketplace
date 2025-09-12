@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Eye, EyeOff } from 'lucide-react';
 
 function AuthContent() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +19,8 @@ function AuthContent() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownSeconds = 120;
   const [resendLoading, setResendLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -180,14 +183,27 @@ function AuthContent() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Digite sua senha"
-                      required
-                      className="h-11"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Digite sua senha"
+                        required
+                        className="h-11 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <Button 
                     type="submit" 
@@ -244,15 +260,28 @@ function AuthContent() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signupPassword" className="text-sm font-medium">Senha</Label>
-                    <Input
-                      id="signupPassword"
-                      name="password"
-                      type="password"
-                      placeholder="Mínimo 6 caracteres"
-                      required
-                      minLength={6}
-                      className="h-11"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signupPassword"
+                        name="password"
+                        type={showSignupPassword ? "text" : "password"}
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                        minLength={6}
+                        className="h-11 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupPassword(!showSignupPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showSignupPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
