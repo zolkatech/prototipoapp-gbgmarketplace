@@ -575,15 +575,23 @@ export default function ProductDetail() {
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  <Button 
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={handleWhatsAppContact}
-                    disabled={!product.supplier.whatsapp}
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    {product.supplier.whatsapp ? 'Conversar no WhatsApp' : 'WhatsApp não disponível'}
-                  </Button>
+                 <div className="space-y-3">
+                   <Button 
+                     className="w-full bg-blue-600 hover:bg-blue-700"
+                     onClick={() => navigate(`/supplier/${product.supplier.id}`)}
+                   >
+                     <Star className="w-4 h-4 mr-2" />
+                     Ver Perfil do Fornecedor
+                   </Button>
+                   
+                   <Button 
+                     className="w-full bg-green-600 hover:bg-green-700"
+                     onClick={handleWhatsAppContact}
+                     disabled={!product.supplier.whatsapp}
+                   >
+                     <MessageCircle className="w-4 h-4 mr-2" />
+                     {product.supplier.whatsapp ? 'Conversar no WhatsApp' : 'WhatsApp não disponível'}
+                   </Button>
                   
                   <div className="grid grid-cols-2 gap-2">
                     <Button 
@@ -697,16 +705,17 @@ export default function ProductDetail() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {relatedProducts.map((relatedProduct) => (
-                  <ProductCard
-                    key={relatedProduct.id}
-                    product={relatedProduct}
-                    currentUserId={profile?.id}
-                    onProductClick={(productId) => navigate(`/product/${productId}`)}
-                    categories={categories}
-                    compact={true}
-                  />
-                ))}
+                 {relatedProducts.map((relatedProduct) => (
+                   <ProductCard
+                     key={relatedProduct.id}
+                     product={relatedProduct}
+                     currentUserId={profile?.id}
+                     onProductClick={(productId) => navigate(`/product/${productId}`)}
+                     onSupplierClick={(supplierId) => navigate(`/supplier/${supplierId}`)}
+                     categories={categories}
+                     compact={true}
+                   />
+                 ))}
               </div>
             </CardContent>
           </Card>

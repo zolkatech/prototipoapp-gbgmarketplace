@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { getCategoryLabel, serviceCategories } from '@/utils/categories';
 
@@ -30,6 +30,8 @@ interface Product {
     city: string;
     state: string;
     avatar_url: string;
+    rating?: number;
+    reviewsCount?: number;
   };
 }
 
@@ -37,6 +39,7 @@ interface ProductCardProps {
   product: Product;
   currentUserId?: string;
   onProductClick: (productId: string) => void;
+  onSupplierClick?: (supplierId: string) => void;
   categories: Array<{ value: string; label: string }>;
   compact?: boolean;
 }
@@ -45,6 +48,7 @@ export default function ProductCard({
   product, 
   currentUserId, 
   onProductClick, 
+  onSupplierClick,
   categories,
   compact = false
 }: ProductCardProps) {
@@ -107,6 +111,13 @@ export default function ProductCard({
 
   const handleCardClick = () => {
     onProductClick(product.id);
+  };
+
+  const handleSupplierClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onSupplierClick) {
+      onSupplierClick(product.supplier.id);
+    }
   };
 
   return (
@@ -206,16 +217,36 @@ export default function ProductCard({
               {getCategoryLabel(product.category)}
             </Badge>
             
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Avatar className="w-3 h-3 shrink-0">
+            <div 
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group" 
+              onClick={handleSupplierClick}
+              title="Ver perfil do fornecedor"
+            >
+              <Avatar className="w-3 h-3 shrink-0 group-hover:ring-1 group-hover:ring-primary transition-all">
                 <AvatarImage src={product.supplier.avatar_url} />
                 <AvatarFallback className="text-xs">
                   {(product.supplier.business_name || product.supplier.full_name).charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate">
-                {product.supplier.business_name || product.supplier.full_name}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className="truncate group-hover:underline block">
+                  {product.supplier.business_name || product.supplier.full_name}
+                </span>
+                {product.supplier.rating && product.supplier.rating > 0 && (
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <Star className="w-2 h-2 fill-yellow-400 text-yellow-400" />
+                    <span className="text-xs font-medium text-yellow-600">
+                      {product.supplier.rating.toFixed(1)}
+                    </span>
+                    {product.supplier.reviewsCount && (
+                      <span className="text-xs opacity-60">
+                        ({product.supplier.reviewsCount})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <Star className="w-2.5 h-2.5 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
             </div>
           </div>
         </CardContent>

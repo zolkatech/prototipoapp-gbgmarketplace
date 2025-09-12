@@ -22,14 +22,16 @@ interface Product {
   original_price?: number;
   delivery_locations?: string[];
   delivers?: boolean;
-  supplier: {
-    id: string;
-    business_name: string;
-    full_name: string;
-    city: string;
-    state: string;
-    avatar_url: string;
-  };
+    supplier: {
+      id: string;
+      business_name: string;
+      full_name: string;
+      city: string;
+      state: string;
+      avatar_url: string;
+      rating?: number;
+      reviewsCount?: number;
+    };
 }
 
 interface ProductFeedProps {
@@ -91,6 +93,27 @@ export default function ProductFeed({ searchQuery, selectedCategory = '' }: Prod
         });
       }
 
+      // Buscar avaliações dos fornecedores
+      const reviewsData = supplierIds.length > 0 ? await supabase
+        .from('reviews')
+        .select('supplier_id, rating')
+        .in('supplier_id', supplierIds) : { data: [] };
+
+      // Calcular média e contagem de avaliações por fornecedor
+      const reviewsMap: Record<string, { rating: number; count: number }> = {};
+      (reviewsData.data || []).forEach(review => {
+        if (!reviewsMap[review.supplier_id]) {
+          reviewsMap[review.supplier_id] = { rating: 0, count: 0 };
+        }
+        reviewsMap[review.supplier_id].rating += review.rating;
+        reviewsMap[review.supplier_id].count += 1;
+      });
+
+      // Calcular médias finais
+      Object.keys(reviewsMap).forEach(supplierId => {
+        reviewsMap[supplierId].rating = reviewsMap[supplierId].rating / reviewsMap[supplierId].count;
+      });
+
       const formattedProducts = (data || []).map(product => ({
         id: product.id,
         name: product.name,
@@ -109,7 +132,9 @@ export default function ProductFeed({ searchQuery, selectedCategory = '' }: Prod
           full_name: '',
           city: '',
           state: '',
-          avatar_url: suppliersMap[product.supplier_id!]?.avatar_url || ''
+          avatar_url: suppliersMap[product.supplier_id!]?.avatar_url || '',
+          rating: reviewsMap[product.supplier_id!]?.rating || 0,
+          reviewsCount: reviewsMap[product.supplier_id!]?.count || 0
         }
       }));
 
@@ -195,15 +220,16 @@ export default function ProductFeed({ searchQuery, selectedCategory = '' }: Prod
       </div>
 
       <div className="grid grid-cols-3 gap-0">
-        {filteredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            currentUserId={currentUser?.id}
-            onProductClick={(productId) => navigate(`/product/${productId}`)}
-            categories={categories}
-          />
-        ))}
+         {filteredProducts.map((product) => (
+           <ProductCard
+             key={product.id}
+             product={product}
+             currentUserId={currentUser?.id}
+             onProductClick={(productId) => navigate(`/product/${productId}`)}
+             onSupplierClick={handleSupplierClick}
+             categories={categories}
+           />
+         ))}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Comment {
@@ -49,6 +49,7 @@ interface ProductFeedPostProps {
 export default function ProductFeedPost({ product, compact = false }: ProductFeedPostProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -205,6 +206,10 @@ export default function ProductFeedPost({ product, compact = false }: ProductFee
     }
   };
 
+  const handleSupplierClick = () => {
+    navigate(`/supplier/${product.supplier.id}`);
+  };
+
   return (
     <div className={`bg-card rounded-lg shadow-sm border ${compact ? 'max-w-sm' : ''}`}>
       {/* Header do post */}
@@ -217,7 +222,14 @@ export default function ProductFeedPost({ product, compact = false }: ProductFee
           <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className={`${compact ? 'font-medium text-[11px] text-muted-foreground' : 'font-semibold text-sm'} truncate`}>{displayName}</div>
+          <div 
+            className={`${compact ? 'font-medium text-[11px] text-muted-foreground hover:text-primary' : 'font-semibold text-sm hover:text-primary'} truncate cursor-pointer transition-colors flex items-center gap-1 group`}
+            onClick={handleSupplierClick}
+            title="Ver perfil do fornecedor"
+          >
+            {displayName}
+            <Star className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
           {product.supplier.city && (
             <div className={`${compact ? 'text-xs' : 'text-xs'} text-muted-foreground truncate`}>{product.supplier.city}</div>
           )}
