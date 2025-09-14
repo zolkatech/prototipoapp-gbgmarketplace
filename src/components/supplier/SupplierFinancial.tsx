@@ -435,6 +435,7 @@ export default function SupplierFinancial() {
         sales={filteredSales.map(s => ({ id: s.id, sale_value: Number(s.sale_value), profit: Number(s.profit), created_at: s.created_at }))}
         expenses={filteredExpenses.map(e => ({ id: e.id, amount: Number(e.amount), expense_date: e.expense_date }))}
         taxRate={taxRate}
+        selectedMonth={selectedMonth}
       />
     </div>
   );
