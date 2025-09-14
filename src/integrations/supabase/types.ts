@@ -345,6 +345,7 @@ export type Database = {
           phone: string | null
           specialties: string[] | null
           state: string | null
+          subscription_plan: string | null
           updated_at: string
           user_id: string
           user_type: string
@@ -368,6 +369,7 @@ export type Database = {
           phone?: string | null
           specialties?: string[] | null
           state?: string | null
+          subscription_plan?: string | null
           updated_at?: string
           user_id: string
           user_type: string
@@ -391,6 +393,7 @@ export type Database = {
           phone?: string | null
           specialties?: string[] | null
           state?: string | null
+          subscription_plan?: string | null
           updated_at?: string
           user_id?: string
           user_type?: string
@@ -620,6 +623,7 @@ export type Database = {
           phone: string | null
           specialties: string[] | null
           state: string | null
+          subscription_plan: string | null
           updated_at: string
           user_id: string
           user_type: string

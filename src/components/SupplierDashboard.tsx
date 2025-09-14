@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { User, Package, Users, BarChart3, Eye, ArrowLeft, Menu, Calendar } from 'lucide-react';
+import { User, Package, Users, BarChart3, Eye, ArrowLeft, Menu, Calendar, Crown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MarketplaceHeader from './MarketplaceHeader';
@@ -11,6 +11,7 @@ import SupplierProducts from './supplier/SupplierProducts';
 import SupplierClients from './supplier/SupplierClients';
 import SupplierFinancial from './supplier/SupplierFinancial';
 import SupplierAgenda from './supplier/SupplierAgenda';
+import SupplierPlan from './supplier/SupplierPlan';
 
 export default function SupplierDashboard() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -25,6 +26,7 @@ export default function SupplierDashboard() {
     { id: 'clients', label: 'Meus Clientes', icon: Users },
     { id: 'agenda', label: 'Agenda de Serviços', icon: Calendar },
     { id: 'financial', label: 'Controle Financeiro', icon: BarChart3 },
+    { id: 'plan', label: 'Meu Plano', icon: Crown },
   ];
 
   const renderContent = () => {
@@ -39,6 +41,8 @@ export default function SupplierDashboard() {
         return <SupplierAgenda />;
       case 'financial':
         return <SupplierFinancial />;
+      case 'plan':
+        return <SupplierPlan />;
       default:
         return <SupplierProfile />;
     }
