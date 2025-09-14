@@ -16,6 +16,7 @@ import SalesForm from './financial/SalesForm';
 import ExpensesSection from './financial/ExpensesSection';
 import SettingsSection from './financial/SettingsSection';
 import ReportsSection from './financial/ReportsSection';
+import SalesChart from './financial/SalesChart';
 
 interface Sale {
   id: string;
@@ -318,6 +319,9 @@ export default function SupplierFinancial() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sales Chart */}
+      <SalesChart sales={filteredSales} selectedMonth={selectedMonth} />
 
       {/* Sales List */}
       <Card>
