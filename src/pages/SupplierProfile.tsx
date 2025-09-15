@@ -5,16 +5,25 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, MapPin, Star, Package } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Package, Phone, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { generateWhatsAppURL, formatPhoneDisplay } from '@/lib/whatsapp-utils';
 
 interface SupplierData {
   id: string;
   business_name: string;
+  full_name: string;
   bio: string;
   avatar_url: string;
+  phone: string;
+  whatsapp: string;
+  city: string;
+  state: string;
+  email: string;
+  website: string;
+  instagram: string;
 }
 
 interface Product {
@@ -61,13 +70,15 @@ function SupplierProfileContent() {
   const fetchSupplierData = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles_public')
-        .select('*')
-        .eq('id', supplierId)
-        .single();
+        .rpc('get_supplier_public_details', { _id: supplierId });
 
       if (error) throw error;
-      setSupplier(data);
+      
+      if (data && data.length > 0) {
+        setSupplier(data[0]);
+      } else {
+        throw new Error('Supplier not found');
+      }
     } catch (error) {
       console.error('Error fetching supplier:', error);
       toast({
@@ -284,27 +295,83 @@ function SupplierProfileContent() {
                 
                 <div className="flex-1 text-center md:text-left space-y-4">
                   <div>
-                    <h1 className="text-3xl font-bold">
-                      {supplier.business_name || 'Fornecedor'}
-                    </h1>
-                  
-                  
-                  {reviews.length > 0 && (
-                    <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
-                      <div className="flex items-center gap-1">
-                        {renderStars(Math.round(averageRating))}
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {averageRating} ({reviews.length} avaliação{reviews.length !== 1 ? 'ões' : ''})
-                      </span>
+                    <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
+                      <h1 className="text-3xl font-bold">
+                        {supplier.business_name || 'Fornecedor'}
+                      </h1>
+                      {reviews.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {renderStars(Math.round(averageRating))}
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {averageRating} ({reviews.length} avaliação{reviews.length !== 1 ? 'ões' : ''})
+                          </span>
+                        </div>
+                      )}
                     </div>
+                    
+                    {supplier.full_name && (
+                      <p className="text-lg text-muted-foreground mt-1">{supplier.full_name}</p>
+                    )}
+                    
+                    {(supplier.city || supplier.state) && (
+                      <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {[supplier.city, supplier.state].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {supplier.bio && (
+                    <p className="text-muted-foreground">{supplier.bio}</p>
                   )}
+                  
+                  {/* Contact Information */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <h3 className="text-lg font-semibold">Contato</h3>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {supplier.whatsapp && (
+                        <Button
+                          onClick={() => window.open(generateWhatsAppURL(supplier.whatsapp), '_blank')}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          WhatsApp: {formatPhoneDisplay(supplier.whatsapp)}
+                        </Button>
+                      )}
+                      
+                      {supplier.phone && supplier.phone !== supplier.whatsapp && (
+                        <Button variant="outline">
+                          <Phone className="w-4 h-4 mr-2" />
+                          {formatPhoneDisplay(supplier.phone)}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {(supplier.website || supplier.instagram || supplier.email) && (
+                      <div className="flex flex-wrap gap-2 text-sm">
+                        {supplier.email && (
+                          <Badge variant="outline" className="cursor-pointer" onClick={() => window.open(`mailto:${supplier.email}`)}>
+                            {supplier.email}
+                          </Badge>
+                        )}
+                        {supplier.website && (
+                          <Badge variant="outline" className="cursor-pointer" onClick={() => window.open(supplier.website, '_blank')}>
+                            {supplier.website}
+                          </Badge>
+                        )}
+                        {supplier.instagram && (
+                          <Badge variant="outline" className="cursor-pointer" onClick={() => window.open(`https://instagram.com/${supplier.instagram.replace('@', '')}`, '_blank')}>
+                            @{supplier.instagram.replace('@', '')}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                {supplier.bio && (
-                  <p className="text-muted-foreground">{supplier.bio}</p>
-                )}
-              </div>
             </div>
           </CardContent>
         </Card>
