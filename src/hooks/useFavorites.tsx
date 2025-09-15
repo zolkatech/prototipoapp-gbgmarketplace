@@ -21,6 +21,12 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
 
   const checkIfFavorite = async () => {
     if (!userId || !productId) return;
+    
+    // Skip check for mock products that don't exist in database
+    if (productId.startsWith('mock-')) {
+      setIsFavorite(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -28,9 +34,9 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
         .select('id')
         .eq('user_id', userId)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
         console.error('Error checking favorite:', error);
         return;
       }
@@ -55,6 +61,16 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
       toast({
         title: 'Erro',
         description: 'Produto não identificado.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Skip operation for mock products
+    if (productId.startsWith('mock-')) {
+      toast({
+        title: 'Produto não disponível',
+        description: 'Este produto é apenas um exemplo e não pode ser favoritado.',
         variant: 'destructive'
       });
       return;
