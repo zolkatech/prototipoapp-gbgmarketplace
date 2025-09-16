@@ -126,33 +126,29 @@ export default function SupplierDashboard() {
 
       <div className="flex relative">
         {/* Mobile Menu Button */}
-        {isMobile && (
-          <div className="fixed top-20 left-4 z-40">
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-white shadow-lg">
-                  <Menu className="w-4 h-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-4">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Menu</h2>
-                </div>
-                <NavigationContent />
-              </SheetContent>
-            </Sheet>
-          </div>
-        )}
+        <div className="md:hidden fixed top-20 left-4 z-40">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="bg-white shadow-lg">
+                <Menu className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-4">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Menu</h2>
+              </div>
+              <NavigationContent />
+            </SheetContent>
+          </Sheet>
+        </div>
 
-        {/* Desktop Sidebar */}
-        {!isMobile && (
-          <aside className="w-64 bg-white border-r min-h-[calc(100vh-140px)] p-4 shadow-sm">
-            <NavigationContent />
-          </aside>
-        )}
+        {/* Sidebar for tablet and desktop */}
+        <aside className="hidden md:block w-64 lg:w-72 bg-white border-r min-h-[calc(100vh-140px)] p-4 lg:p-6 shadow-sm">
+          <NavigationContent />
+        </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 p-4 md:p-6 ${isMobile ? 'w-full' : ''}`}>
+        <main className="flex-1 p-4 md:p-6 lg:p-8 w-full md:w-[calc(100%-16rem)] lg:w-[calc(100%-18rem)]">
           {renderContent()}
         </main>
       </div>

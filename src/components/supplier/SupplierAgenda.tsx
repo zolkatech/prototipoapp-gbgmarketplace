@@ -191,33 +191,36 @@ export default function SupplierAgenda() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-4 max-w-full">
+      <div className="flex flex-col gap-4 md:gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="text-center md:text-left">
-          <h1 className="text-2xl font-semibold">Agenda de Serviços</h1>
-          <p className="text-sm text-muted-foreground">Gerencie seus agendamentos por data, status e cliente.</p>
+          <h1 className="text-2xl lg:text-3xl font-semibold">Agenda de Serviços</h1>
+          <p className="text-sm lg:text-base text-muted-foreground">Gerencie seus agendamentos por data, status e cliente.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row md:grid md:grid-cols-2 lg:flex lg:flex-row gap-2 w-full lg:w-auto">
           <Input
             placeholder="Buscar por cliente, serviço ou local"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-64"
+            className="w-full sm:w-64 md:col-span-2 lg:col-span-1"
           />
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="agendado">Agendado</SelectItem>
-              <SelectItem value="concluido">Concluído</SelectItem>
-              <SelectItem value="cancelado">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={fetchData} disabled={loading} className="gap-2">
-            <RefreshCw className="w-4 h-4" /> Atualizar
-          </Button>
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="agendado">Agendado</SelectItem>
+                <SelectItem value="concluido">Concluído</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={fetchData} disabled={loading} className="gap-2 whitespace-nowrap">
+              <RefreshCw className="w-4 h-4" /> 
+              <span className="hidden sm:inline">Atualizar</span>
+            </Button>
+          </div>
 
           {/* Botão e diálogo para novo agendamento (simples e intuitivo) */}
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -314,22 +317,25 @@ export default function SupplierAgenda() {
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 lg:gap-6">
         {filtered.map((a) => (
-          <Card key={a.id} className="shadow-sm">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {formatDate(a.appointment_date)}
-                <span className="text-muted-foreground">às</span>
-                <Clock className="w-4 h-4" /> {formatTime(a.appointment_date)}
+          <Card key={a.id} className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-2 pb-3">
+              <CardTitle className="text-base lg:text-lg font-medium flex items-center gap-2 flex-wrap">
+                <Calendar className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">{formatDate(a.appointment_date)}</span>
+                <span className="text-muted-foreground hidden sm:inline">às</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4 flex-shrink-0" /> 
+                  <span className="whitespace-nowrap">{formatTime(a.appointment_date)}</span>
+                </div>
               </CardTitle>
-<div className="flex items-center gap-2">
-                <Badge className={statusColor[(a.status || "agendado").toLowerCase()] || ""}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className={`${statusColor[(a.status || "agendado").toLowerCase()] || ""} whitespace-nowrap`}>
                   {(a.status || "agendado").replace("_", " ")}
                 </Badge>
                 <Select value={(a.status || "agendado").toLowerCase()} onValueChange={(v) => updateStatus(a.id, v)}>
-                  <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectTrigger className="w-32 md:w-36 h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -340,7 +346,7 @@ export default function SupplierAgenda() {
                 </Select>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" aria-label="Excluir agendamento">
+                    <Button variant="destructive" size="icon" aria-label="Excluir agendamento" className="flex-shrink-0">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -361,35 +367,44 @@ export default function SupplierAgenda() {
                 </AlertDialog>
               </div>
             </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              <div className="flex flex-wrap gap-4">
+            <CardContent className="text-sm lg:text-base space-y-3 pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{a.location || "Não informado"}</span>
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{a.location || "Não informado"}</span>
                 </div>
-                <div>
+                <div className="truncate">
                   <span className="text-muted-foreground">Cliente:</span>{" "}
                   <span className="font-medium">{clients[a.client_id]?.name || "-"}</span>
                 </div>
-                <div>
+                <div className="truncate">
                   <span className="text-muted-foreground">Serviço:</span>{" "}
                   <span className="font-medium">{a.service_type}</span>
                 </div>
                 {typeof a.price === "number" && (
-                  <div>
+                  <div className="whitespace-nowrap">
                     <span className="text-muted-foreground">Valor:</span>{" "}
                     <span className="font-medium">R$ {a.price.toFixed(2)}</span>
                   </div>
                 )}
               </div>
-              {a.description && <p className="text-muted-foreground">{a.description}</p>}
+              {a.description && (
+                <div className="border-t pt-3 mt-3">
+                  <p className="text-muted-foreground leading-relaxed">{a.description}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
         {!filtered.length && (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              {loading ? "Carregando..." : "Nenhum agendamento encontrado."}
+            <CardContent className="py-12 lg:py-16 text-center text-muted-foreground">
+              <div className="text-lg lg:text-xl mb-2">
+                {loading ? "Carregando..." : "Nenhum agendamento encontrado."}
+              </div>
+              {!loading && (
+                <p className="text-sm">Tente ajustar os filtros ou criar um novo agendamento.</p>
+              )}
             </CardContent>
           </Card>
         )}

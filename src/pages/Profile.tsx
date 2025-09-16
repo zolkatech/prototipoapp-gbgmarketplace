@@ -260,8 +260,8 @@ function ProfileContent() {
     <div className="min-h-screen bg-gray-50">
       <MarketplaceHeader userProfile={profile} showSearch={false} />
       
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-6">
+      <div className="container mx-auto px-4 py-6 md:py-8 lg:py-10 max-w-6xl">
+        <div className="mb-6 lg:mb-8">
           <Button 
             variant="ghost" 
             onClick={handleBack}
@@ -270,26 +270,26 @@ function ProfileContent() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Meu Perfil</h1>
-          <p className="text-gray-600">Gerencie suas informações pessoais e de contato</p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">Meu Perfil</h1>
+          <p className="text-gray-600 md:text-lg">Gerencie suas informações pessoais e de contato</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3 xl:gap-8">
           {/* Avatar Section */}
-          <Card>
+          <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Foto de Perfil</CardTitle>
+              <CardTitle className="text-lg md:text-xl">Foto de Perfil</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <Avatar className="w-32 h-32">
+            <CardContent className="flex flex-col items-center space-y-4 md:space-y-6">
+              <Avatar className="w-32 h-32 md:w-40 md:h-40 lg:w-36 lg:h-36 xl:w-40 xl:h-40">
                 <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="text-2xl md:text-3xl lg:text-2xl xl:text-3xl">
                   {(profile?.business_name || profile?.full_name || 'U').charAt(0)}
                 </AvatarFallback>
               </Avatar>
               
               <label className="cursor-pointer">
-                <Button variant="outline" size="sm" asChild disabled={avatarUploading}>
+                <Button variant="outline" size="sm" asChild disabled={avatarUploading} className="md:text-base md:px-4 md:py-2">
                   <span>
                     <Camera className="w-4 h-4 mr-2" />
                     {avatarUploading ? 'Enviando...' : 'Alterar Foto'}
@@ -304,90 +304,96 @@ function ProfileContent() {
                 />
               </label>
 
-              <div className="text-center space-y-1">
-                <Badge variant="secondary">
+              <div className="text-center space-y-2">
+                <Badge variant="secondary" className="md:text-sm md:px-3 md:py-1">
                   {profile?.user_type === 'fornecedor' ? 'Fornecedor' : 'Cliente'}
                 </Badge>
-                <p className="text-sm text-gray-600">{profile?.email}</p>
+                <p className="text-sm md:text-base text-gray-600 break-all">{profile?.email}</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Profile Form */}
-          <div className="md:col-span-2">
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Informações Pessoais</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-lg md:text-xl">Informações Pessoais</CardTitle>
+                <CardDescription className="md:text-base">
                   Mantenha suas informações atualizadas para melhor experiência
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="full_name">Nome Completo</Label>
+                      <Label htmlFor="full_name" className="md:text-base">Nome Completo</Label>
                       <Input
                         id="full_name"
                         value={formData.full_name}
                         onChange={(e) => handleInputChange('full_name', e.target.value)}
                         placeholder="Seu nome completo"
+                        className="md:h-11 md:text-base"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="business_name">Nome do Negócio</Label>
+                      <Label htmlFor="business_name" className="md:text-base">Nome do Negócio</Label>
                       <Input
                         id="business_name"
                         value={formData.business_name}
                         onChange={(e) => handleInputChange('business_name', e.target.value)}
                         placeholder="Nome da sua empresa"
+                        className="md:h-11 md:text-base"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="bio">Biografia</Label>
+                    <Label htmlFor="bio" className="md:text-base">Biografia</Label>
                     <Textarea
                       id="bio"
                       value={formData.bio}
                       onChange={(e) => handleInputChange('bio', e.target.value)}
                       placeholder="Conte um pouco sobre você ou seu negócio"
                       rows={3}
+                      className="md:text-base resize-none"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="city">Cidade</Label>
+                      <Label htmlFor="city" className="md:text-base">Cidade</Label>
                       <Input
                         id="city"
                         value={formData.city}
                         onChange={(e) => handleInputChange('city', e.target.value)}
                         placeholder="Sua cidade"
+                        className="md:h-11 md:text-base"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="state">Estado</Label>
+                      <Label htmlFor="state" className="md:text-base">Estado</Label>
                       <Input
                         id="state"
                         value={formData.state}
                         onChange={(e) => handleInputChange('state', e.target.value)}
                         placeholder="UF"
+                        className="md:h-11 md:text-base"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="cep">CEP</Label>
+                      <Label htmlFor="cep" className="md:text-base">CEP</Label>
                       <Input
                         id="cep"
                         value={formData.cep}
                         onChange={(e) => handleInputChange('cep', e.target.value)}
                         placeholder="00000-000"
+                        className="md:h-11 md:text-base"
                       />
                       {formData.cep && (
-                        <div className="text-xs">
+                        <div className="text-xs md:text-sm">
                           {validateCEP(formData.cep) ? (
                             <span className="text-green-600">✓ CEP válido</span>
                           ) : (
@@ -520,7 +526,7 @@ function ProfileContent() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full md:h-12 md:text-base lg:w-auto lg:px-8 lg:self-end" disabled={loading}>
                     {loading ? 'Salvando...' : 'Salvar Alterações'}
                   </Button>
                 </form>
