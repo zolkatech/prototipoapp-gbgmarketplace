@@ -48,6 +48,7 @@ function ProfileContent() {
 
   useEffect(() => {
     if (profile) {
+      console.log('Loading profile data:', profile); // Debug log
       setFormData({
         full_name: profile.full_name || '',
         business_name: profile.business_name || '',
@@ -63,6 +64,7 @@ function ProfileContent() {
         cpf_cnpj: profile.cpf_cnpj || '',
         specialties_text: Array.isArray(profile.specialties) ? profile.specialties.join(', ') : ''
       });
+      console.log('Form data set with WhatsApp:', profile.whatsapp); // Debug log
     }
   }, [profile]);
 
@@ -100,10 +102,13 @@ function ProfileContent() {
   };
 
   const handleWhatsAppBlur = () => {
-    // Aplica formatação apenas quando o usuário sai do campo
-    if (formData.whatsapp) {
+    // Aplica formatação apenas quando o usuário sai do campo e há conteúdo
+    if (formData.whatsapp && formData.whatsapp.trim()) {
       const formatted = formatWhatsAppNumber(formData.whatsapp);
-      setFormData(prev => ({ ...prev, whatsapp: formatted }));
+      // Só atualiza se o valor formatado for diferente do atual
+      if (formatted !== formData.whatsapp) {
+        setFormData(prev => ({ ...prev, whatsapp: formatted }));
+      }
     }
   };
 
@@ -229,6 +234,9 @@ function ProfileContent() {
       });
 
       if (error) throw error;
+
+      // Refresh profile data to update the form with saved values
+      await refreshProfile();
 
       toast({
         title: "Perfil atualizado!",
