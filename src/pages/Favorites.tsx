@@ -48,7 +48,14 @@ function FavoritesContent() {
     { value: 'freio', label: 'Freio' },
     { value: 'estribo', label: 'Estribo' },
     { value: 'outros', label: 'Outros' },
-    { value: 'servico', label: 'Serviços para Cavalos' }
+    { value: 'servico', label: 'Serviços para Cavalos' },
+    { value: 'casqueamento', label: 'Casqueamento' },
+    { value: 'ferrageamento', label: 'Ferrageamento' },
+    { value: 'transporte', label: 'Transporte' },
+    { value: 'veterinario', label: 'Veterinário' },
+    { value: 'parto-assistencia', label: 'Parto e Assistência' },
+    { value: 'treinamento', label: 'Treinamento' },
+    { value: 'hospedagem', label: 'Hospedagem' }
   ];
 
   useEffect(() => {
@@ -87,6 +94,13 @@ function FavoritesContent() {
       
       const favorites = await getFavorites(profile.id);
       console.log('Raw favorites data:', favorites);
+      console.log('Number of favorites found:', favorites.length);
+      
+      if (favorites.length === 0) {
+        console.log('No favorites returned from getFavorites');
+        setFavoriteProducts([]);
+        return;
+      }
       
       const formattedProducts = favorites.map((fav: any) => ({
         id: fav.products.id,
@@ -100,9 +114,10 @@ function FavoritesContent() {
         original_price: fav.products.original_price || null,
         delivery_locations: fav.products.delivery_locations || [],
         delivers: fav.products.delivers ?? true,
+        installment_options: fav.products.installment_options || { max_installments: 0, interest_free_installments: 0 },
         supplier: {
-          id: fav.products.profiles_public?.id || '',
-          business_name: fav.products.profiles_public?.business_name || '',
+          id: fav.products.supplier_id || '',
+          business_name: fav.products.profiles_public?.business_name || 'Fornecedor não identificado',
           full_name: '',
           city: '',
           state: '',

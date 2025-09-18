@@ -133,49 +133,88 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
     try {
       console.log('Getting favorites for user ID:', userId);
       
-      const { data, error } = await supabase
+      // First, get all favorites for the user
+      const { data: favoritesData, error: favoritesError } = await supabase
         .from('favorites')
-        .select(`
-          id,
-          product_id,
-          created_at,
-          products (
-            id,
-            name,
-            description,
-            price,
-            image_url,
-            images,
-            category,
-            supplier_id,
-            discount_percentage,
-            original_price,
-            delivery_locations,
-            delivers,
-            installment_options,
-            profiles_public!products_supplier_id_fkey (
-              id,
-              business_name,
-              avatar_url,
-              bio
-            )
-          )
-        `)
+        .select('id, product_id, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      console.log('Favorites query result:', { data, error });
-
-      if (error) {
-        console.error('Favorites query error:', error);
-        throw error;
+      if (favoritesError) {
+        console.error('Favorites query error:', favoritesError);
+        throw favoritesError;
       }
 
-      // Filter out any favorites where products is null (deleted products)
-      const validFavorites = (data || []).filter((fav: any) => fav.products && fav.products.id);
+      if (!favoritesData || favoritesData.length === 0) {
+        console.log('No favorites found for user');
+        return [];
+      }
+
+      // Get all product IDs
+      const productIds = favoritesData.map(fav => fav.product_id);
       
-      console.log('Valid favorites after filtering:', validFavorites);
-      return validFavorites;
+      // Fetch products data
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          description,
+          price,
+          image_url,
+          images,
+          category,
+          supplier_id,
+          discount_percentage,
+          original_price,
+          delivery_locations,
+          delivers,
+          installment_options
+        `)
+        .in('id', productIds);
+
+      if (productsError) {
+        console.error('Products query error:', productsError);
+        throw productsError;
+      }
+
+      // Get unique supplier IDs
+      const supplierIds = [...new Set(productsData?.map(p => p.supplier_id).filter(Boolean))];
+      
+      // Fetch suppliers data
+      const { data: suppliersData, error: suppliersError } = await supabase
+        .from('profiles_public')
+        .select('id, business_name, avatar_url, bio')
+        .in('id', supplierIds);
+
+      if (suppliersError) {
+        console.error('Suppliers query error:', suppliersError);
+        // Don't throw error for suppliers, just continue without supplier data
+      }
+
+      // Combine all data
+      const result = favoritesData.map(favorite => {
+        const product = productsData?.find(p => p.id === favorite.product_id);
+        if (!product) {
+          console.warn('Product not found for favorite:', favorite.product_id);
+          return null;
+        }
+
+        const supplier = suppliersData?.find(s => s.id === product.supplier_id);
+
+        return {
+          id: favorite.id,
+          product_id: favorite.product_id,
+          created_at: favorite.created_at,
+          products: {
+            ...product,
+            profiles_public: supplier || null
+          }
+        };
+      }).filter(Boolean); // Remove null entries
+
+      console.log('Combined favorites result:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching favorites:', error);
       return [];
