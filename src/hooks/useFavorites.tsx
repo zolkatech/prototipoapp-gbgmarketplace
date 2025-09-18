@@ -94,6 +94,9 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
           title: 'Produto removido dos favoritos',
           description: 'O produto foi removido da sua lista de favoritos.',
         });
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('favoritesUpdated'));
       } else {
         // Adicionar aos favoritos
         const { error } = await supabase
@@ -110,6 +113,9 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
           title: 'Produto favoritado',
           description: 'O produto foi adicionado à sua lista de favoritos.',
         });
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('favoritesUpdated'));
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -146,6 +152,7 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
             original_price,
             delivery_locations,
             delivers,
+            installment_options,
             profiles_public!products_supplier_id_fkey (
               id,
               business_name,
@@ -159,9 +166,16 @@ export function useFavorites({ userId, productId }: UseFavoritesProps = {}) {
 
       console.log('Favorites query result:', { data, error });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Favorites query error:', error);
+        throw error;
+      }
 
-      return data || [];
+      // Filter out any favorites where products is null (deleted products)
+      const validFavorites = (data || []).filter((fav: any) => fav.products && fav.products.id);
+      
+      console.log('Valid favorites after filtering:', validFavorites);
+      return validFavorites;
     } catch (error) {
       console.error('Error fetching favorites:', error);
       return [];

@@ -65,6 +65,19 @@ function FavoritesContent() {
     }
   }, [user, profile, navigate]);
 
+  // Listen for storage events to refresh when favorites are updated in other tabs/components
+  useEffect(() => {
+    const handleFavoritesUpdate = () => {
+      if (profile?.id) {
+        console.log('Detected favorites update, refreshing...');
+        fetchFavorites();
+      }
+    };
+
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    return () => window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+  }, [profile?.id]);
+
   const fetchFavorites = async () => {
     if (!profile?.id) return;
 
