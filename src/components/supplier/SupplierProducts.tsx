@@ -282,8 +282,8 @@ export default function SupplierProducts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Meus Produtos</h2>
-          <p className="text-muted-foreground">Gerencie seus produtos e serviços</p>
+          <h2 className="text-2xl font-bold">Minha Vitrine</h2>
+          <p className="text-muted-foreground">Gerencie seus serviços</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
