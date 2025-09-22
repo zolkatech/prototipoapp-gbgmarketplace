@@ -512,8 +512,8 @@ export default function SupplierProducts() {
         <Card className="p-12 text-center">
           <div className="text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
-            <p>Comece adicionando seu primeiro produto!</p>
+            <p className="text-lg font-medium mb-2">Nenhum serviço cadastrado</p>
+            <p>Comece adicionando seu primeiro serviço!</p>
           </div>
         </Card>
       )}
