@@ -22,7 +22,7 @@ export default function SupplierDashboard() {
 
   const tabs = [
     { id: 'profile', label: 'Meu Perfil', icon: User },
-    { id: 'products', label: 'Meus Produtos', icon: Package },
+    { id: 'products', label: 'Minha Vitrine', icon: Package },
     { id: 'clients', label: 'Meus Clientes', icon: Users },
     { id: 'agenda', label: 'Agenda de Serviços', icon: Calendar },
     { id: 'financial', label: 'Controle Financeiro', icon: BarChart3 },
