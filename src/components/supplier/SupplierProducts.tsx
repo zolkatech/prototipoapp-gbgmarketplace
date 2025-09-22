@@ -38,6 +38,7 @@ interface FormData {
   price: string;
   category: string;
   images: string[];
+  videos: string[];
   discount_percentage: number;
   original_price: string;
   delivers: boolean;
@@ -66,6 +67,7 @@ export default function SupplierProducts() {
     price: '',
     category: 'ferramenta',
     images: [],
+    videos: [],
     discount_percentage: 0,
     original_price: '',
     delivers: true,
@@ -209,6 +211,7 @@ export default function SupplierProducts() {
       price: product.price.toString(),
       category: product.category,
       images: product.images || [],
+      videos: [], // Assumindo que ainda não temos vídeos nos produtos existentes
       discount_percentage: product.discount_percentage || 0,
       original_price: product.original_price?.toString() || '',
       delivers: product.delivers,
@@ -265,6 +268,7 @@ export default function SupplierProducts() {
       price: '',
       category: selectedType === 'product' ? 'ferramenta' : 'ferrageamento',
       images: [],
+      videos: [],
       discount_percentage: 0,
       original_price: '',
       delivers: true,

@@ -17,6 +17,7 @@ interface FormData {
   price: string;
   category: string;
   images: string[];
+  videos: string[];
   discount_percentage: number;
   original_price: string;
   delivers: boolean;
@@ -82,36 +83,57 @@ export default function ProductForm({ supplierId, formData, onFormDataChange, on
     });
   };
 
-  const handleFiles = async (fileList: FileList | null) => {
+  const handleFiles = async (fileList: FileList | null, type: 'images' | 'videos') => {
     if (!fileList) return;
-    const current = formData.images?.length || 0;
-    const remaining = 3 - current;
+    const currentCount = type === 'images' ? (formData.images?.length || 0) : (formData.videos?.length || 0);
+    const remaining = 3 - currentCount;
     if (remaining <= 0) {
-      toast({ title: 'Limite de imagens', description: 'Máximo de 3 imagens por item.', variant: 'destructive' });
+      toast({ 
+        title: `Limite de ${type === 'images' ? 'imagens' : 'vídeos'}`, 
+        description: `Máximo de 3 ${type === 'images' ? 'imagens' : 'vídeos'} por item.`, 
+        variant: 'destructive' 
+      });
       return;
     }
     const files = Array.from(fileList).slice(0, remaining);
     const uploadedUrls: string[] = [];
+    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (!file.type.startsWith('image/')) continue;
+      const isValidType = type === 'images' ? file.type.startsWith('image/') : file.type.startsWith('video/');
+      if (!isValidType) continue;
+      
+      const bucket = type === 'images' ? 'product-images' : 'product-videos';
       const path = `${supplierId}/${Date.now()}-${i}-${file.name}`;
-      const { error } = await supabase.storage.from('product-images').upload(path, file);
+      const { error } = await supabase.storage.from(bucket).upload(path, file);
       if (error) {
         console.error(error);
-        toast({ title: 'Falha ao enviar imagem', description: error.message, variant: 'destructive' });
+        toast({ 
+          title: `Falha ao enviar ${type === 'images' ? 'imagem' : 'vídeo'}`, 
+          description: error.message, 
+          variant: 'destructive' 
+        });
         continue;
       }
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
       uploadedUrls.push(data.publicUrl);
     }
     if (uploadedUrls.length) {
-      onFormDataChange({ ...formData, images: [...(formData.images || []), ...uploadedUrls].slice(0, 3) });
+      const currentFiles = type === 'images' ? (formData.images || []) : (formData.videos || []);
+      const updatedFiles = [...currentFiles, ...uploadedUrls].slice(0, 3);
+      onFormDataChange({ 
+        ...formData, 
+        [type]: updatedFiles
+      });
     }
   };
 
-  const removeImage = (url: string) => {
-    onFormDataChange({ ...formData, images: (formData.images || []).filter((u) => u !== url) });
+  const removeMedia = (url: string, type: 'images' | 'videos') => {
+    const currentFiles = type === 'images' ? (formData.images || []) : (formData.videos || []);
+    onFormDataChange({ 
+      ...formData, 
+      [type]: currentFiles.filter((u) => u !== url) 
+    });
   };
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -159,44 +181,88 @@ export default function ProductForm({ supplierId, formData, onFormDataChange, on
         />
       </div>
 
-      {/* Imagens (máx. 3) */}
-      <div className="space-y-2">
-        <Label>Imagens do Produto (máx. 3)</Label>
-        <div className="flex items-center gap-3">
-          <Input 
-            type="file" 
-            accept="image/*" 
-            multiple 
-            onChange={(e) => handleFiles(e.target.files)}
-            disabled={(formData.images?.length || 0) >= 3}
-            className="flex-1"
-          />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {formData.images?.length || 0}/3 imagens
-          </span>
-        </div>
-        
-        {formData.images && formData.images.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            {formData.images.map((url, index) => (
-              <div key={url} className="relative group">
-                <img 
-                  src={url} 
-                  alt={`Imagem do produto ${index + 1}`} 
-                  className="w-full h-24 object-cover rounded-md border-2 border-gray-200 hover:border-primary transition-colors"
-                />
-                <button
-                  type="button"
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-destructive/90"
-                  onClick={() => removeImage(url)}
-                  aria-label="Remover imagem"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+      {/* Imagens e Vídeos (máx. 3 cada) */}
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Label>Imagens do Produto (máx. 3)</Label>
+          <div className="flex items-center gap-3">
+            <Input 
+              type="file" 
+              accept="image/*" 
+              multiple 
+              onChange={(e) => handleFiles(e.target.files, 'images')}
+              disabled={(formData.images?.length || 0) >= 3}
+              className="flex-1"
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {formData.images?.length || 0}/3 imagens
+            </span>
           </div>
-        )}
+          
+          {formData.images && formData.images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {formData.images.map((url, index) => (
+                <div key={url} className="relative group">
+                  <img 
+                    src={url} 
+                    alt={`Imagem do produto ${index + 1}`} 
+                    className="w-full h-24 object-cover rounded-md border-2 border-gray-200 hover:border-primary transition-colors"
+                  />
+                  <button
+                    type="button"
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-destructive/90"
+                    onClick={() => removeMedia(url, 'images')}
+                    aria-label="Remover imagem"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Vídeos do Produto (máx. 3)</Label>
+          <div className="flex items-center gap-3">
+            <Input 
+              type="file" 
+              accept="video/*" 
+              multiple 
+              onChange={(e) => handleFiles(e.target.files, 'videos')}
+              disabled={(formData.videos?.length || 0) >= 3}
+              className="flex-1"
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {formData.videos?.length || 0}/3 vídeos
+            </span>
+          </div>
+          
+          {formData.videos && formData.videos.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {formData.videos.map((url, index) => (
+                <div key={url} className="relative group">
+                  <video 
+                    src={url} 
+                    className="w-full h-24 object-cover rounded-md border-2 border-gray-200 hover:border-primary transition-colors"
+                    controls={false}
+                    muted
+                    onMouseEnter={(e) => e.currentTarget.play()}
+                    onMouseLeave={(e) => e.currentTarget.pause()}
+                  />
+                  <button
+                    type="button"
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-destructive/90"
+                    onClick={() => removeMedia(url, 'videos')}
+                    aria-label="Remover vídeo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
