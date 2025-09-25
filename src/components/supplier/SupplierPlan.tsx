@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Check, Crown, Zap } from 'lucide-react';
+import { Check, X, Crown, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SupplierPlan() {
@@ -11,23 +11,33 @@ export default function SupplierPlan() {
   const currentPlan = profile?.subscription_plan || 'gratuito';
   const isPro = currentPlan === 'pro';
 
-  const features = {
-    gratuito: [
-      'Até 10 produtos cadastrados',
-      'Perfil básico',
-      'Chat básico com clientes',
-      'Agenda simples'
-    ],
-    pro: [
-      'Produtos ilimitados',
-      'Perfil premium com destaque',
-      'Chat avançado com clientes',
-      'Agenda completa com lembretes',
-      'Relatórios financeiros detalhados',
-      'Suporte prioritário',
-      'Analytics avançados'
-    ]
-  };
+  const planFeatures = [
+    {
+      name: 'Cadastro e agenda',
+      gratuito: true,
+      pro: true
+    },
+    {
+      name: 'Controle financeiro completo',
+      gratuito: false,
+      pro: true
+    },
+    {
+      name: 'Vitrine e Feed',
+      gratuito: true,
+      pro: true
+    },
+    {
+      name: 'Relatórios PDF',
+      gratuito: false,
+      pro: true
+    },
+    {
+      name: 'Aparecer na busca de clientes',
+      gratuito: false,
+      pro: true
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -68,89 +78,72 @@ export default function SupplierPlan() {
             </Badge>
           </div>
         </CardHeader>
+      </Card>
+
+      {/* Tabela de Comparação de Funcionalidades */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Plano Gratuito x Plano Pro</CardTitle>
+          <CardDescription>Compare as funcionalidades disponíveis em cada plano</CardDescription>
+        </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium mb-2">Recursos inclusos:</h4>
-              <ul className="space-y-2">
-                {features[currentPlan].map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-500" />
-                    {feature}
-                  </li>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-4 px-2 font-medium">Funcionalidade</th>
+                  <th className="text-center py-4 px-2 font-medium">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>Gratuito</span>
+                      <span className="text-sm font-normal text-muted-foreground">R$ 0/mês</span>
+                    </div>
+                  </th>
+                  <th className="text-center py-4 px-2 font-medium">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>Pro (mensalidade simbólica)</span>
+                      <span className="text-sm font-normal text-muted-foreground">R$ 29,90/mês</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {planFeatures.map((feature, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="py-4 px-2">{feature.name}</td>
+                    <td className="py-4 px-2 text-center">
+                      {feature.gratuito ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      )}
+                    </td>
+                    <td className="py-4 px-2 text-center">
+                      {feature.pro ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      )}
+                    </td>
+                  </tr>
                 ))}
-              </ul>
-            </div>
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-6 flex justify-center">
+            {!isPro && (
+              <Button size="lg" className="px-8">
+                Fazer Upgrade para Pro
+              </Button>
+            )}
+            {isPro && (
+              <Badge variant="default" className="px-8 py-2 text-base">
+                Você já é PRO!
+              </Badge>
+            )}
           </div>
         </CardContent>
       </Card>
-
-      {/* Comparação de Planos */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Plano Gratuito */}
-        <Card className={`${!isPro ? 'ring-2 ring-primary' : ''}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Gratuito
-            </CardTitle>
-            <CardDescription>Ideal para começar</CardDescription>
-            <div className="text-2xl font-bold">R$ 0<span className="text-sm font-normal">/mês</span></div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 mb-4">
-              {features.gratuito.map((feature, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4 text-green-500" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            {isPro && (
-              <Button variant="outline" className="w-full" disabled>
-                Plano Atual
-              </Button>
-            )}
-            {!isPro && (
-              <Badge variant="default" className="w-full justify-center py-2">
-                Plano Atual
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Plano Pro */}
-        <Card className={`${isPro ? 'ring-2 ring-primary' : ''}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-yellow-500" />
-              Pro
-            </CardTitle>
-            <CardDescription>Para fornecedores sérios</CardDescription>
-            <div className="text-2xl font-bold">R$ 29,90<span className="text-sm font-normal">/mês</span></div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 mb-4">
-              {features.pro.map((feature, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4 text-green-500" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            {isPro && (
-              <Badge variant="default" className="w-full justify-center py-2">
-                Plano Atual
-              </Badge>
-            )}
-            {!isPro && (
-              <Button className="w-full">
-                Fazer Upgrade
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
