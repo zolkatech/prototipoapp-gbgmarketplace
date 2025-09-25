@@ -56,6 +56,7 @@ interface ReviewClient {
   id: string;
   full_name: string;
   avatar_url: string;
+  state?: string;
   rating: number;
   comment: string;
   created_at: string;
@@ -128,7 +129,8 @@ export default function SupplierClients() {
           profiles!reviews_client_id_fkey (
             id,
             full_name,
-            avatar_url
+            avatar_url,
+            state
           )
         `)
         .eq('supplier_id', profile.id)
@@ -142,6 +144,7 @@ export default function SupplierClients() {
           id: review.client_id,
           full_name: prof?.full_name || 'Cliente',
           avatar_url: prof?.avatar_url || '',
+          state: prof?.state || '',
           rating: review.rating,
           comment: review.comment || '',
           created_at: review.created_at
@@ -661,7 +664,12 @@ export default function SupplierClients() {
                         
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium">{client.full_name}</h4>
+                            <div className="space-y-1">
+                              <h4 className="font-medium">{client.full_name}</h4>
+                              {client.state && (
+                                <p className="text-xs text-muted-foreground">{client.state}</p>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1">
                               {renderStars(client.rating)}
                             </div>
