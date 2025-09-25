@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Search, MapPin, ShoppingCart, Heart, Bell, LogOut, Menu, User, Settings, Package, X } from 'lucide-react';
+import { Search, MapPin, ShoppingCart, Heart, Bell, LogOut, Menu, User, Settings, Package, X, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -126,6 +126,10 @@ export default function MarketplaceHeader({
                       <DropdownMenuItem onClick={() => navigate('/profile')} className="flex items-center gap-2">
                         <User className="w-4 h-4" />
                         Meu Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/suppliers')} className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Fornecedores
                       </DropdownMenuItem>
                       {userProfile.user_type !== 'fornecedor' && (
                         <DropdownMenuItem onClick={() => navigate('/favorites')} className="flex items-center gap-2">

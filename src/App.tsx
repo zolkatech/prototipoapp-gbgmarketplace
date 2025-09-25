@@ -14,6 +14,7 @@ import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import SupplierProfile from "./pages/SupplierProfile";
+import SupplierSearch from "./pages/SupplierSearch";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/hooks/useAuth";
 
@@ -35,6 +36,7 @@ const App = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/product/:productId" element={<ProductDetail />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/suppliers" element={<SupplierSearch />} />
             <Route path="/supplier/:supplierId" element={<SupplierProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
